@@ -8,20 +8,31 @@ import { digitsOnly } from '../../../shared/utils/format';
 
 interface LocationState {
   phoneNumber?: string;
+  /** کد تایید فقط در محیط Development توسط بک‌اند برگردانده می‌شود */
+  code?: string;
+  notice?: string;
 }
 
 const VerifyPhonePage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { verifyPhone, loading, error, isAuthenticated } = useAuth();
+  const state = (location.state as LocationState | null) ?? {};
 
-  const phoneNumber = (location.state as LocationState | null)?.phoneNumber ?? '';
-  const [code, setCode] = useState('');
+  const { verifyPhone, loading, error } = useAuth();
+
+  const [code, setCode] = useState(state.code ?? '');
   const [formError, setFormError] = useState<string | null>(null);
+
+  const phoneNumber = state.phoneNumber ?? '';
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setFormError(null);
+
+    if (!phoneNumber) {
+      setFormError('شماره موبایل مشخص نیست. لطفاً از صفحه ورود یا ثبت‌نام شروع کنید.');
+      return;
+    }
 
     if (code.length !== 6) {
       setFormError('کد تایید ۶ رقمی است.');
@@ -31,8 +42,8 @@ const VerifyPhonePage: React.FC = () => {
     const result = await verifyPhone(phoneNumber, code);
 
     if (result.success) {
-      toast.success('شماره موبایل با موفقیت تایید شد 🎉');
-      navigate(isAuthenticated ? '/' : '/login', { replace: true });
+      toast.success('شماره موبایل تایید شد. خوش آمدید 🎉');
+      navigate('/', { replace: true });
     }
   };
 
@@ -42,9 +53,7 @@ const VerifyPhonePage: React.FC = () => {
     <AuthShell
       title="تایید شماره موبایل"
       subtitle={
-        phoneNumber
-          ? `کد تایید به شماره ${phoneNumber} ارسال شد`
-          : 'کد تاییدی که برای شما پیامک شده را وارد کنید'
+        phoneNumber ? `کد ۶ رقمی ارسال‌شده به ${phoneNumber} را وارد کنید` : 'کد ۶ رقمی پیامک‌شده را وارد کنید'
       }
       icon="📩"
       footer={
@@ -53,8 +62,23 @@ const VerifyPhonePage: React.FC = () => {
         </Link>
       }
     >
+      {state.notice && (
+        <div className="mb-4 rounded-2xl border border-amber-100 bg-amber-50 p-3 text-center text-[11px] font-bold leading-6 text-amber-700">
+          {state.notice}
+        </div>
+      )}
+
+      {state.code && (
+        <div className="mb-4 rounded-2xl border border-lavender-100 bg-lavender-50 p-3 text-center text-[11px] font-bold text-lavender-500">
+          کد تایید (محیط توسعه): <span className="font-mono tracking-[0.3em]">{state.code}</span>
+        </div>
+      )}
+
       {message && (
-        <div role="alert" className="mb-4 rounded-2xl border border-red-100 bg-red-50 p-3 text-center text-xs font-bold text-red-600">
+        <div
+          role="alert"
+          className="mb-4 rounded-2xl border border-red-100 bg-red-50 p-3 text-center text-xs font-bold text-red-600"
+        >
           {message}
         </div>
       )}
@@ -84,7 +108,7 @@ const VerifyPhonePage: React.FC = () => {
             'در حال بررسی…'
           ) : (
             <>
-              <ShieldCheck size={18} aria-hidden="true" /> تایید شماره
+              <ShieldCheck size={18} aria-hidden="true" /> تایید و ورود
             </>
           )}
         </button>

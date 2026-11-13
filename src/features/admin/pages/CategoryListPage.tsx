@@ -3,34 +3,25 @@ import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Check, Layers, Pencil, Plus, Tag, Trash2, X } from 'lucide-react';
 import { useCategories } from '../../../shared/hooks/useCategories';
+import { useAuth } from '../../../shared/hooks/useAuth';
 import { endpoints } from '../../../shared/config/api-endpoints';
 import { http } from '../../../shared/services/http';
+import { formatNumber } from '../../../shared/utils/format';
 import type { Category } from '../../../shared/types/models';
 
 interface FormState {
   name: string;
-  slug: string;
   description: string;
+  displayOrder: string;
   isActive: boolean;
 }
 
-const EMPTY_FORM: FormState = { name: '', slug: '', description: '', isActive: true };
-
-/** ساخت اسلاگ انگلیسی از نام (سازگار با حروف فارسی: در صورت نبود حرف لاتین، مقدار پیش‌فرض) */
-function buildSlug(name: string): string {
-  const slug = name
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9-]/g, '')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
-
-  return slug || `category-${Date.now().toString(36)}`;
-}
+const EMPTY_FORM: FormState = { name: '', description: '', displayOrder: '0', isActive: true };
 
 const CategoryListPage: React.FC = () => {
   const { categories, loading, refresh } = useCategories();
+  const { isAdmin } = useAuth();
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
@@ -48,33 +39,34 @@ const CategoryListPage: React.FC = () => {
     setEditing(category);
     setForm({
       name: category.name,
-      slug: category.slug ?? '',
       description: category.description ?? '',
+      displayOrder: String(category.displayOrder ?? 0),
       isActive: category.isActive !== false,
     });
     setIsModalOpen(true);
-  };
-
-  const handleNameChange = (name: string) => {
-    setForm((prev) => ({
-      ...prev,
-      name,
-      slug: prev.slug && editing ? prev.slug : buildSlug(name),
-    }));
   };
 
   const save = async (event: React.FormEvent) => {
     event.preventDefault();
     setSaving(true);
 
-    const payload = {
-      id: editing?.id ?? 0,
-      name: form.name.trim(),
-      slug: form.slug.trim(),
-      description: form.description.trim(),
-      displayOrder: 0,
-      isActive: form.isActive,
-    };
+    // منطبق با CreateCategoryDto / UpdateCategoryDto بک‌اند (اسلاگ در سرور ساخته می‌شود)
+    const payload = editing
+      ? {
+          id: editing.id,
+          name: form.name.trim(),
+          description: form.description.trim(),
+          imageUrl: editing.imageUrl ?? null,
+          displayOrder: Number(form.displayOrder) || 0,
+          isActive: form.isActive,
+        }
+      : {
+          name: form.name.trim(),
+          description: form.description.trim(),
+          parentCategoryId: null,
+          imageUrl: null,
+          displayOrder: Number(form.displayOrder) || 0,
+        };
 
     try {
       if (editing) {
@@ -133,6 +125,8 @@ const CategoryListPage: React.FC = () => {
                 <tr className="border-b border-brand-50 bg-brand-50/50 text-[11px] font-black text-ink-soft">
                   <th className="p-4">نام دسته</th>
                   <th className="p-4">اسلاگ</th>
+                  <th className="p-4 text-center">ترتیب</th>
+                  <th className="p-4 text-center">محصولات</th>
                   <th className="p-4 text-center">وضعیت</th>
                   <th className="p-4 text-center">عملیات</th>
                 </tr>
@@ -141,7 +135,7 @@ const CategoryListPage: React.FC = () => {
               <tbody className="divide-y divide-brand-50">
                 {loading && (
                   <tr>
-                    <td colSpan={4} className="p-10 text-center text-xs text-ink-light">
+                    <td colSpan={6} className="p-10 text-center text-xs text-ink-light">
                       در حال بارگذاری…
                     </td>
                   </tr>
@@ -149,7 +143,7 @@ const CategoryListPage: React.FC = () => {
 
                 {!loading && categories.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="p-10 text-center text-xs text-ink-light">
+                    <td colSpan={6} className="p-10 text-center text-xs text-ink-light">
                       دسته‌بندی‌ای ثبت نشده است.
                     </td>
                   </tr>
@@ -159,13 +153,19 @@ const CategoryListPage: React.FC = () => {
                   <tr key={category.id} className="text-xs transition-colors hover:bg-brand-50/30">
                     <td className="p-4 font-bold text-ink">{category.name}</td>
                     <td className="p-4 font-mono text-[11px] text-ink-light" dir="ltr">
-                      {category.slug ?? '—'}
+                      {category.slug || '—'}
                     </td>
+                    <td className="p-4 text-center text-ink-soft">{formatNumber(category.displayOrder ?? 0)}</td>
+                    <td className="p-4 text-center text-ink-soft">{formatNumber(category.productsCount ?? 0)}</td>
                     <td className="p-4 text-center">
                       {category.isActive !== false ? (
-                        <span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black text-emerald-600">فعال</span>
+                        <span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black text-emerald-600">
+                          فعال
+                        </span>
                       ) : (
-                        <span className="rounded-full bg-red-50 px-3 py-1 text-[10px] font-black text-red-500">غیرفعال</span>
+                        <span className="rounded-full bg-red-50 px-3 py-1 text-[10px] font-black text-red-500">
+                          غیرفعال
+                        </span>
                       )}
                     </td>
                     <td className="p-4">
@@ -178,14 +178,17 @@ const CategoryListPage: React.FC = () => {
                         >
                           <Pencil size={15} aria-hidden="true" />
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => remove(category)}
-                          aria-label={`حذف ${category.name}`}
-                          className="grid h-8 w-8 place-items-center rounded-lg bg-red-50 text-red-500 transition-colors hover:bg-red-500 hover:text-white"
-                        >
-                          <Trash2 size={15} aria-hidden="true" />
-                        </button>
+
+                        {isAdmin && (
+                          <button
+                            type="button"
+                            onClick={() => remove(category)}
+                            aria-label={`حذف ${category.name}`}
+                            className="grid h-8 w-8 place-items-center rounded-lg bg-red-50 text-red-500 transition-colors hover:bg-red-500 hover:text-white"
+                          >
+                            <Trash2 size={15} aria-hidden="true" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -194,6 +197,11 @@ const CategoryListPage: React.FC = () => {
             </table>
           </div>
         </div>
+
+        <p className="mt-4 text-[11px] leading-6 text-ink-light">
+          اسلاگ دسته‌بندی به‌صورت خودکار در سرور از روی نام ساخته می‌شود. حذف دسته‌بندی فقط با نقش
+          مدیر کل (Admin) امکان‌پذیر است.
+        </p>
       </div>
 
       {isModalOpen && (
@@ -227,7 +235,7 @@ const CategoryListPage: React.FC = () => {
                   id="category-name"
                   type="text"
                   value={form.name}
-                  onChange={(event) => handleNameChange(event.target.value)}
+                  onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
                   className="field"
                   placeholder="مثلاً سیسمونی نوزاد"
                   required
@@ -236,18 +244,17 @@ const CategoryListPage: React.FC = () => {
               </div>
 
               <div>
-                <label htmlFor="category-slug" className="mb-1.5 block text-xs font-bold text-ink-soft">
-                  اسلاگ (انگلیسی)
+                <label htmlFor="category-order" className="mb-1.5 block text-xs font-bold text-ink-soft">
+                  ترتیب نمایش
                 </label>
                 <input
-                  id="category-slug"
-                  type="text"
-                  value={form.slug}
-                  onChange={(event) => setForm((prev) => ({ ...prev, slug: event.target.value }))}
-                  className="field font-mono text-xs"
+                  id="category-order"
+                  type="number"
+                  min={0}
+                  value={form.displayOrder}
+                  onChange={(event) => setForm((prev) => ({ ...prev, displayOrder: event.target.value }))}
+                  className="field font-mono"
                   dir="ltr"
-                  required
-                  maxLength={60}
                 />
               </div>
 
@@ -264,15 +271,17 @@ const CategoryListPage: React.FC = () => {
                 />
               </div>
 
-              <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-ink-soft">
-                <input
-                  type="checkbox"
-                  checked={form.isActive}
-                  onChange={(event) => setForm((prev) => ({ ...prev, isActive: event.target.checked }))}
-                  className="h-4 w-4 accent-brand-500"
-                />
-                نمایش در فروشگاه
-              </label>
+              {editing && (
+                <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-ink-soft">
+                  <input
+                    type="checkbox"
+                    checked={form.isActive}
+                    onChange={(event) => setForm((prev) => ({ ...prev, isActive: event.target.checked }))}
+                    className="h-4 w-4 accent-brand-500"
+                  />
+                  نمایش در فروشگاه
+                </label>
+              )}
 
               <button type="submit" disabled={saving} className="btn-primary w-full py-3.5">
                 <Check size={18} aria-hidden="true" /> {saving ? 'در حال ذخیره…' : 'ذخیره'}

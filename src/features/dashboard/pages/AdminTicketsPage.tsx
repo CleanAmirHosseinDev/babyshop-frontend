@@ -1,9 +1,17 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import { AlertCircle, CheckCircle, Clock, MessageSquare } from 'lucide-react';
 import { useTickets } from '../../../shared/hooks/useTickets';
 import { formatDate } from '../../../shared/utils/format';
-import type { Ticket } from '../../../shared/types/models';
+import { TICKET_STATUS, type Ticket } from '../../../shared/types/models';
+
+const STATUS_OPTIONS = [
+  { value: TICKET_STATUS.Open, label: 'باز (پاسخ نداده)' },
+  { value: TICKET_STATUS.InProgress, label: 'در حال بررسی' },
+  { value: TICKET_STATUS.Resolved, label: 'حل شده' },
+  { value: TICKET_STATUS.Closed, label: 'بسته شده' },
+];
 
 const StatusBadge: React.FC<{ status?: string }> = ({ status }) => {
   switch (status?.toLowerCase()) {
@@ -35,7 +43,7 @@ const StatusBadge: React.FC<{ status?: string }> = ({ status }) => {
 
 const AdminTicketsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { getAllTicketsAdmin, loading } = useTickets();
+  const { getAllTicketsAdmin, updateTicketStatus, loading } = useTickets();
   const [tickets, setTickets] = useState<Ticket[]>([]);
 
   const loadTickets = useCallback(async () => {
@@ -47,6 +55,17 @@ const AdminTicketsPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadTickets();
   }, [loadTickets]);
+
+  const handleStatusChange = async (ticketId: number, status: string) => {
+    const result = await updateTicketStatus(ticketId, status);
+
+    if (result.success) {
+      toast.success('وضعیت تیکت به‌روزرسانی شد.');
+      await loadTickets();
+    } else {
+      toast.error(result.message ?? 'تغییر وضعیت تیکت انجام نشد.');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#FFFAFB] text-right">
@@ -73,6 +92,7 @@ const AdminTicketsPage: React.FC = () => {
                   <th className="p-4">موضوع</th>
                   <th className="p-4">تاریخ</th>
                   <th className="p-4 text-center">وضعیت</th>
+                  <th className="p-4 text-center">تغییر وضعیت</th>
                   <th className="p-4 text-center">عملیات</th>
                 </tr>
               </thead>
@@ -80,7 +100,7 @@ const AdminTicketsPage: React.FC = () => {
               <tbody className="divide-y divide-brand-50">
                 {loading && tickets.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="p-10 text-center text-xs text-ink-light">
+                    <td colSpan={7} className="p-10 text-center text-xs text-ink-light">
                       در حال بارگذاری…
                     </td>
                   </tr>
@@ -88,7 +108,7 @@ const AdminTicketsPage: React.FC = () => {
 
                 {!loading && tickets.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="p-10 text-center text-xs text-ink-light">
+                    <td colSpan={7} className="p-10 text-center text-xs text-ink-light">
                       پیامی برای نمایش وجود ندارد.
                     </td>
                   </tr>
@@ -115,6 +135,27 @@ const AdminTicketsPage: React.FC = () => {
 
                       <td className="p-4 text-center">
                         <StatusBadge status={ticket.status} />
+                      </td>
+
+                      <td className="p-4">
+                        <label className="sr-only" htmlFor={`ticket-status-${ticket.id}`}>
+                          وضعیت تیکت {ticket.ticketNumber}
+                        </label>
+                        <select
+                          id={`ticket-status-${ticket.id}`}
+                          value={STATUS_OPTIONS.find((option) => option.value === ticket.status)?.value ?? ''}
+                          onChange={(event) => handleStatusChange(ticket.id, event.target.value)}
+                          className="w-full cursor-pointer rounded-xl border border-brand-100 bg-white p-2 text-[11px] font-bold text-ink-soft outline-none focus:border-brand-300"
+                        >
+                          {!STATUS_OPTIONS.some((option) => option.value === ticket.status) && (
+                            <option value="">{ticket.status}</option>
+                          )}
+                          {STATUS_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
                       </td>
 
                       <td className="p-4 text-center">

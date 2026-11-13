@@ -1,12 +1,12 @@
 import { useCallback, useState } from 'react';
 import { endpoints } from '../config/api-endpoints';
 import { http } from '../services/http';
-import type { Ticket } from '../types/models';
+import type { Ticket, TicketStats } from '../types/models';
 
 export interface CreateTicketPayload {
   Subject: string;
   Message: string;
-  Category?: string;
+  Category: string;
   OrderId?: number | null;
   ProductId?: number | null;
 }
@@ -28,7 +28,7 @@ export const useTickets = () => {
     }
   }, []);
 
-  /** تمام تیکت‌ها (ادمین) */
+  /** تمام تیکت‌ها (پنل مدیریت) */
   const getAllTicketsAdmin = useCallback(async (): Promise<Ticket[]> => {
     setLoading(true);
     try {
@@ -60,7 +60,7 @@ export const useTickets = () => {
     [],
   );
 
-  /** ارسال پاسخ در تیکت */
+  /** ارسال پاسخ در تیکت (پاسخ مدیر در بک‌اند به‌صورت IsAdminReply علامت می‌خورد) */
   const sendReply = useCallback(
     async (ticketId: number, message: string): Promise<{ success: boolean; message?: string }> => {
       try {
@@ -68,6 +68,28 @@ export const useTickets = () => {
         return { success: true };
       } catch (err) {
         return { success: false, message: err instanceof Error ? err.message : 'خطا در ارسال پاسخ' };
+      }
+    },
+    [],
+  );
+
+  /** آمار تیکت‌ها برای نشانگر پنل مدیریت */
+  const getAdminStats = useCallback(async (): Promise<TicketStats | null> => {
+    try {
+      return await http.get<TicketStats>(endpoints.tickets.adminStats);
+    } catch {
+      return null;
+    }
+  }, []);
+
+  /** تغییر وضعیت تیکت (پنل مدیریت) */
+  const updateTicketStatus = useCallback(
+    async (ticketId: number, status: string): Promise<{ success: boolean; message?: string }> => {
+      try {
+        await http.put(endpoints.tickets.adminStatus, { TicketId: ticketId, Status: status });
+        return { success: true };
+      } catch (err) {
+        return { success: false, message: err instanceof Error ? err.message : 'خطا در تغییر وضعیت تیکت' };
       }
     },
     [],
@@ -88,8 +110,10 @@ export const useTickets = () => {
   return {
     getMyTickets,
     getAllTicketsAdmin,
+    getAdminStats,
     createTicket,
     sendReply,
+    updateTicketStatus,
     getTicketDetails,
     loading,
     error,

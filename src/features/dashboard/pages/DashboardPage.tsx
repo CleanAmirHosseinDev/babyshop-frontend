@@ -9,7 +9,7 @@ import { useOrders } from '../../order/hooks/useOrders';
 import { useTickets } from '../../../shared/hooks/useTickets';
 import { formatDate, formatNumber } from '../../../shared/utils/format';
 import { PLACEHOLDER_IMAGE, getFirstImageUrl } from '../../../shared/utils/imageUrl';
-import type { Order, Ticket as TicketModel } from '../../../shared/types/models';
+import type { OrderSummary, Ticket as TicketModel } from '../../../shared/types/models';
 
 type Tab = 'orders' | 'wishlist' | 'tickets';
 
@@ -29,22 +29,22 @@ const ORDER_STATUS_LABELS: Record<string, string> = {
 
 const TICKET_STATUS_LABELS: Record<string, string> = {
   open: 'در انتظار پاسخ',
-  inprogress: 'پاسخ داده شده',
-  resolved: 'بسته شده',
+  inprogress: 'در حال بررسی',
+  resolved: 'حل شده',
   closed: 'بسته شده',
 };
 
 const DashboardPage: React.FC = () => {
-  const { logout, isAdmin, user } = useAuth();
+  const { logout, isAdmin, isManager, user } = useAuth();
   const { wishlist } = useWishlist();
   const { getMyOrders } = useOrders();
-  const { getMyTickets, getAllTicketsAdmin } = useTickets();
+  const { getMyTickets, getAdminStats } = useTickets();
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState<Tab>('orders');
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [tickets, setTickets] = useState<TicketModel[]>([]);
-  const [adminTickets, setAdminTickets] = useState<TicketModel[]>([]);
+  const [openAdminTickets, setOpenAdminTickets] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   const loadTickets = useCallback(async () => {
@@ -81,9 +81,10 @@ const DashboardPage: React.FC = () => {
     let active = true;
 
     const loadNotifications = async () => {
-      if (isAdmin) {
-        const data = await getAllTicketsAdmin();
-        if (active) setAdminTickets(data);
+      if (isManager) {
+        // آمار سبک‌تر از دریافت کل تیکت‌هاست (GET /api/admin/AdminTicket/dashboard/stats)
+        const stats = await getAdminStats();
+        if (active) setOpenAdminTickets(stats?.open ?? 0);
       } else {
         const data = await getMyTickets();
         if (active) setTickets(data);
@@ -95,10 +96,11 @@ const DashboardPage: React.FC = () => {
     return () => {
       active = false;
     };
-  }, [getAllTicketsAdmin, getMyTickets, isAdmin]);
+  }, [getAdminStats, getMyTickets, isManager]);
 
-  const openAdminTickets = adminTickets.filter((ticket) => ticket.status?.toLowerCase() === 'open').length;
-  const answeredTickets = tickets.filter((ticket) => ticket.status?.toLowerCase() === 'inprogress').length;
+  const answeredTickets = tickets.filter((ticket) =>
+    ['inprogress', 'resolved'].includes(ticket.status?.toLowerCase() ?? ''),
+  ).length;
 
   const handleLogout = () => {
     logout();
@@ -125,9 +127,9 @@ const DashboardPage: React.FC = () => {
                   {user.phoneNumber}
                 </p>
               )}
-              {isAdmin && (
+              {isManager && (
                 <span className="mt-3 inline-block rounded-full bg-lavender-100 px-3 py-1 text-[10px] font-black text-lavender-500">
-                  مدیر سیستم 🛡️
+                  {isAdmin ? 'مدیر کل 🛡️' : 'مدیر فروشگاه 🛡️'}
                 </span>
               )}
             </div>
@@ -165,16 +167,19 @@ const DashboardPage: React.FC = () => {
                 );
               })}
 
-              {isAdmin && (
+              {isManager && (
                 <div className="mt-3 space-y-1 border-t border-brand-50 pt-3">
                   <p className="px-4 pb-1 text-[10px] font-bold text-ink-light">مدیریت فروشگاه</p>
 
-                  <Link
-                    to="/admin/orders"
-                    className="block rounded-2xl px-4 py-3 text-xs font-bold text-lavender-500 transition-colors hover:bg-lavender-50"
-                  >
-                    🛒 سفارش‌ها
-                  </Link>
+                  {/* لیست کل سفارش‌ها در بک‌اند فقط برای Admin مجاز است */}
+                  {isAdmin && (
+                    <Link
+                      to="/admin/orders"
+                      className="block rounded-2xl px-4 py-3 text-xs font-bold text-lavender-500 transition-colors hover:bg-lavender-50"
+                    >
+                      🛒 سفارش‌ها
+                    </Link>
+                  )}
 
                   <Link
                     to="/admin/tickets"

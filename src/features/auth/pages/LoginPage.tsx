@@ -40,8 +40,21 @@ const LoginPage: React.FC = () => {
     }
 
     const result = await login({ phoneNumber, password });
+
     if (result.success) {
       navigate(redirectTo, { replace: true });
+      return;
+    }
+
+    // بک‌اند برای شماره‌ی تایید‌نشده کد جدید می‌فرستد و پیام مخصوص برمی‌گرداند
+    if (result.requiresVerification) {
+      navigate('/verify-phone', {
+        replace: true,
+        state: {
+          phoneNumber,
+          notice: 'شماره موبایل شما هنوز تایید نشده است؛ کد تایید جدید برای شما ارسال شد.',
+        },
+      });
     }
   };
 

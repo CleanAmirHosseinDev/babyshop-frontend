@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react';
 import { endpoints } from '../../../shared/config/api-endpoints';
 import { http } from '../../../shared/services/http';
-import type { Delivery, Order, OrderItem } from '../../../shared/types/models';
+import type { Delivery, Order, OrderSummary } from '../../../shared/types/models';
 
+/** منطبق با CreateOrderDto بک‌اند (UserId از توکن خوانده می‌شود) */
 export interface CreateOrderPayload {
   ShippingAddress: string;
   PhoneNumber: string;
@@ -10,10 +11,8 @@ export interface CreateOrderPayload {
   CustomerNote?: string;
   Items: Array<{
     ProductId: number;
-    ProductName: string;
     Quantity: number;
     UnitPrice: number;
-    AgeRange?: string;
   }>;
 }
 
@@ -26,7 +25,7 @@ export interface CreateOrderResult {
 export const useOrders = () => {
   const [loading, setLoading] = useState(false);
 
-  /** ثبت سفارش جدید */
+  /** ثبت سفارش جدید — مبلغ/مالیات/هزینه ارسال نهایی را سرور محاسبه می‌کند */
   const createOrder = useCallback(async (payload: CreateOrderPayload): Promise<CreateOrderResult> => {
     setLoading(true);
     try {
@@ -42,11 +41,11 @@ export const useOrders = () => {
     }
   }, []);
 
-  /** لیست کل سفارش‌ها (ادمین) */
-  const getAllOrdersAdmin = useCallback(async (): Promise<Order[]> => {
+  /** لیست کل سفارش‌ها (فقط Admin) */
+  const getAllOrdersAdmin = useCallback(async (): Promise<OrderSummary[]> => {
     setLoading(true);
     try {
-      const data = await http.get<Order[]>(endpoints.orders.base);
+      const data = await http.get<OrderSummary[]>(endpoints.orders.base);
       return Array.isArray(data) ? data : [];
     } catch {
       return [];
@@ -55,12 +54,12 @@ export const useOrders = () => {
     }
   }, []);
 
-  /** تغییر وضعیت سفارش */
+  /** تغییر وضعیت سفارش (فقط Admin) */
   const updateStatus = useCallback(
-    async (orderId: number, status: string): Promise<{ success: boolean; message?: string }> => {
+    async (orderId: number, status: string, reason?: string): Promise<{ success: boolean; message?: string }> => {
       setLoading(true);
       try {
-        await http.put(endpoints.orders.status, { OrderId: orderId, Status: status });
+        await http.put(endpoints.orders.status, { OrderId: orderId, Status: status, Reason: reason });
         return { success: true };
       } catch (error) {
         return { success: false, message: error instanceof Error ? error.message : 'خطا در تغییر وضعیت سفارش' };
@@ -72,10 +71,10 @@ export const useOrders = () => {
   );
 
   /** سفارش‌های کاربر جاری */
-  const getMyOrders = useCallback(async (): Promise<Order[]> => {
+  const getMyOrders = useCallback(async (): Promise<OrderSummary[]> => {
     setLoading(true);
     try {
-      const data = await http.get<Order[]>(endpoints.orders.my);
+      const data = await http.get<OrderSummary[]>(endpoints.orders.my);
       return Array.isArray(data) ? data : [];
     } catch {
       return [];
@@ -84,7 +83,7 @@ export const useOrders = () => {
     }
   }, []);
 
-  /** جزئیات یک سفارش */
+  /** جزئیات یک سفارش (فاکتور) */
   const getOrderDetails = useCallback(async (orderId: number): Promise<Order | null> => {
     setLoading(true);
     try {
@@ -115,5 +114,3 @@ export const useOrders = () => {
     loading,
   };
 };
-
-export type { OrderItem };

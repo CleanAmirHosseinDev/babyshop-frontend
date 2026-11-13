@@ -8,6 +8,8 @@ import { digitsOnly } from '../../../shared/utils/format';
 
 interface LocationState {
   phoneNumber?: string;
+  /** فقط در محیط Development توسط بک‌اند برگردانده می‌شود */
+  code?: string;
 }
 
 const ResetPasswordPage: React.FC = () => {
@@ -15,8 +17,9 @@ const ResetPasswordPage: React.FC = () => {
   const location = useLocation();
   const { resetPassword, loading, error } = useAuth();
 
-  const phoneNumber = (location.state as LocationState | null)?.phoneNumber ?? '';
-  const [code, setCode] = useState('');
+  const state = (location.state as LocationState | null) ?? {};
+  const phoneNumber = state.phoneNumber ?? '';
+  const [code, setCode] = useState(state.code ?? '');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
@@ -61,6 +64,12 @@ const ResetPasswordPage: React.FC = () => {
         </Link>
       }
     >
+      {state.code && (
+        <div className="mb-4 rounded-2xl border border-lavender-100 bg-lavender-50 p-3 text-center text-[11px] font-bold text-lavender-500">
+          کد بازیابی (محیط توسعه): <span className="font-mono tracking-[0.3em]">{state.code}</span>
+        </div>
+      )}
+
       {message && (
         <div role="alert" className="mb-4 rounded-2xl border border-red-100 bg-red-50 p-3 text-center text-xs font-bold text-red-600">
           {message}

@@ -1,5 +1,5 @@
 import { environment } from '../config/environment';
-import { clearStoredToken, getStoredToken } from './session';
+import { clearSession, getStoredToken } from './session';
 
 /** رویدادی که هنگام منقضی/نامعتبر شدن توکن منتشر می‌شود */
 export const AUTH_EXPIRED_EVENT = 'ziizii:auth-expired';
@@ -132,7 +132,7 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     });
 
     if (response.status === 401 && auth) {
-      clearStoredToken();
+      clearSession();
       window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
     }
 

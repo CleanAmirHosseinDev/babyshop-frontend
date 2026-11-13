@@ -26,7 +26,7 @@ const HomePage: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const [inventoryMap, setInventoryMap] = useState<Record<number, number>>({});
 
-  // موجودی هر محصول = مجموع موجودی همه‌ی سایزها
+  // موجودی هر محصول = مجموع موجودی همه‌ی سایزها (تنها یک‌بار پس از mount)
   useEffect(() => {
     let isMounted = true;
 
@@ -46,16 +46,20 @@ const HomePage: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [getAllInventory, products]);
+  }, [getAllInventory]);
 
   const filteredProducts = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
 
     return products.filter((product) => {
+      // محصولات غیرفعال در ویترین نمایش داده نمی‌شوند
+      if (product.isActive === false) return false;
+
       const matchesSearch = !term || product.name?.toLowerCase().includes(term);
+      // در بک‌اند: ۱ پسرانه، ۲ دخترانه، ۳ یونیسکس (هر دو) — محصولات یونیسکس در هر دو فیلتر دیده می‌شوند
       const matchesGender =
-        activeGender === 0 || Number(product.gender) === activeGender || Number(product.gender) === 3;
-      const matchesCategory = activeCategory === null || Number(product.categoryId) === activeCategory;
+        activeGender === 0 || product.genderValue === activeGender || product.genderValue === 3;
+      const matchesCategory = activeCategory === null || product.categoryId === activeCategory;
 
       return matchesSearch && matchesGender && matchesCategory;
     });
@@ -228,7 +232,7 @@ const HomePage: React.FC = () => {
               <ProductCard
                 key={product.id}
                 product={product}
-                stock={inventoryMap[product.id] ?? product.currentStock}
+                stock={inventoryMap[product.id]}
                 isFavorite={isInWishlist(product.id)}
                 onToggleFavorite={() => toggleWishlist(product)}
               />

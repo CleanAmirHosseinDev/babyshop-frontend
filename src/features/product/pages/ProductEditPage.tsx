@@ -8,12 +8,7 @@ import { endpoints } from '../../../shared/config/api-endpoints';
 import { http } from '../../../shared/services/http';
 import { formatNumber } from '../../../shared/utils/format';
 import { PLACEHOLDER_IMAGE, getImageUrl } from '../../../shared/utils/imageUrl';
-
-const GENDERS = [
-  { id: '1', label: 'پسرانه 👦' },
-  { id: '2', label: 'دخترانه 👧' },
-  { id: '3', label: 'هر دو 🌈' },
-];
+import { GENDERS } from '../../../shared/types/models';
 
 const MAX_IMAGE_SIZE = 3 * 1024 * 1024;
 
@@ -30,7 +25,7 @@ const ProductEditPage: React.FC = () => {
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [description, setDescription] = useState('');
-  const [gender, setGender] = useState('3');
+  const [gender, setGender] = useState(3);
   const [categoryId, setCategoryId] = useState('');
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [newImages, setNewImages] = useState<File[]>([]);
@@ -68,7 +63,7 @@ const ProductEditPage: React.FC = () => {
       setName(product.name ?? '');
       setPrice(String(product.price ?? ''));
       setDescription(product.description ?? '');
-      setGender(String(product.gender ?? 3));
+      setGender(Number(product.genderValue ?? 3) || 3);
       setCategoryId(String(product.categoryId ?? ''));
       setExistingImages((product.imageUrl ?? '').split('|').filter(Boolean));
       setLoading(false);
@@ -128,7 +123,7 @@ const ProductEditPage: React.FC = () => {
     formData.append('Name', name.trim());
     formData.append('Price', String(Number(price)));
     formData.append('Description', description.trim());
-    formData.append('Gender', gender);
+    formData.append('Gender', String(gender));
     formData.append('CategoryId', categoryId);
     newImages.forEach((file) => formData.append('NewImages', file));
 
@@ -243,17 +238,17 @@ const ProductEditPage: React.FC = () => {
             <div className="flex gap-2">
               {GENDERS.map((option) => (
                 <button
-                  key={option.id}
+                  key={option.value}
                   type="button"
-                  onClick={() => setGender(option.id)}
-                  aria-pressed={gender === option.id}
+                  onClick={() => setGender(option.value)}
+                  aria-pressed={gender === option.value}
                   className={`flex-1 rounded-2xl py-2.5 text-[11px] font-bold transition-all ${
-                    gender === option.id
+                    gender === option.value
                       ? 'bg-brand-500 text-white shadow-md'
                       : 'border border-brand-100 bg-white text-ink-soft hover:border-brand-300'
                   }`}
                 >
-                  {option.label}
+                  {option.emoji} {option.label}
                 </button>
               ))}
             </div>

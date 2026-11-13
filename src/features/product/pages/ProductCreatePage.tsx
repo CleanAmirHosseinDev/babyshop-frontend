@@ -6,22 +6,9 @@ import { useCategories } from '../../../shared/hooks/useCategories';
 import { endpoints } from '../../../shared/config/api-endpoints';
 import { http } from '../../../shared/services/http';
 import { formatNumber } from '../../../shared/utils/format';
+import { AGE_RANGES, GENDERS } from '../../../shared/types/models';
 
-const AGE_OPTIONS = [
-  { code: '0-3', label: 'نوزاد (۰-۳ ماه)' },
-  { code: '3-6', label: '۳ تا ۶ ماه' },
-  { code: '6-12', label: '۶ تا ۱۲ ماه' },
-  { code: '12-24', label: '۱ تا ۲ سال' },
-  { code: '24+', label: 'بالای ۲ سال' },
-];
-
-const GENDERS = [
-  { id: '1', label: 'پسرانه 👦' },
-  { id: '2', label: 'دخترانه 👧' },
-  { id: '3', label: 'هر دو 🌈' },
-];
-
-const MAX_IMAGES = 6;
+const MAX_IMAGES = 8;
 const MAX_IMAGE_SIZE = 3 * 1024 * 1024; // ۳ مگابایت
 
 function buildSlug(name: string): string {
@@ -45,7 +32,7 @@ const ProductCreatePage: React.FC = () => {
   const [slug, setSlug] = useState('');
   const [price, setPrice] = useState('');
   const [description, setDescription] = useState('');
-  const [gender, setGender] = useState('1');
+  const [gender, setGender] = useState(1);
   const [categoryId, setCategoryId] = useState('');
   const [selectedAges, setSelectedAges] = useState<string[]>([]);
   const [ageStocks, setAgeStocks] = useState<Record<string, string>>({});
@@ -154,7 +141,7 @@ const ProductCreatePage: React.FC = () => {
     formData.append('Slug', slug || buildSlug(name));
     formData.append('Price', String(Number(price)));
     formData.append('Description', description.trim());
-    formData.append('Gender', gender);
+    formData.append('Gender', String(gender));
     formData.append('CategoryId', categoryId);
     formData.append('AgeRange', selectedAges[0]);
     formData.append('InventoryDetails', JSON.stringify(inventoryDetails));
@@ -207,7 +194,7 @@ const ProductCreatePage: React.FC = () => {
 
             <div>
               <label htmlFor="product-slug" className="mb-1.5 flex items-center gap-1 text-xs font-bold text-ink-soft">
-                <Link2 size={13} aria-hidden="true" /> اسلاگ (انگلیسی)
+                <Link2 size={13} aria-hidden="true" /> اسلاگ (اختیاری)
               </label>
               <input
                 id="product-slug"
@@ -216,8 +203,8 @@ const ProductCreatePage: React.FC = () => {
                 onChange={(event) => setSlug(event.target.value)}
                 className="field font-mono text-xs"
                 dir="ltr"
-                required
                 maxLength={80}
+                placeholder="اگر خالی بماند خودکار ساخته می‌شود"
               />
             </div>
 
@@ -271,17 +258,17 @@ const ProductCreatePage: React.FC = () => {
               <div className="flex gap-2">
                 {GENDERS.map((option) => (
                   <button
-                    key={option.id}
+                    key={option.value}
                     type="button"
-                    onClick={() => setGender(option.id)}
-                    aria-pressed={gender === option.id}
+                    onClick={() => setGender(option.value)}
+                    aria-pressed={gender === option.value}
                     className={`flex-1 rounded-2xl py-2.5 text-[11px] font-bold transition-all ${
-                      gender === option.id
+                      gender === option.value
                         ? 'bg-brand-500 text-white shadow-md'
                         : 'border border-brand-100 bg-white text-ink-soft hover:border-brand-300'
                     }`}
                   >
-                    {option.label}
+                    {option.emoji} {option.label}
                   </button>
                 ))}
               </div>
@@ -292,7 +279,7 @@ const ProductCreatePage: React.FC = () => {
                 <Baby size={14} aria-hidden="true" /> رده‌های سنی
               </p>
               <div className="flex flex-wrap gap-2">
-                {AGE_OPTIONS.map((age) => (
+                {AGE_RANGES.map((age) => (
                   <button
                     key={age.code}
                     type="button"
@@ -318,7 +305,7 @@ const ProductCreatePage: React.FC = () => {
                 {selectedAges.map((code) => (
                   <div key={code} className="rounded-2xl border border-lavender-100 bg-white p-3">
                     <label htmlFor={`stock-${code}`} className="mb-1.5 block text-[11px] font-bold text-ink-soft">
-                      {AGE_OPTIONS.find((option) => option.code === code)?.label}
+                      {AGE_RANGES.find((option) => option.code === code)?.label}
                     </label>
                     <input
                       id={`stock-${code}`}

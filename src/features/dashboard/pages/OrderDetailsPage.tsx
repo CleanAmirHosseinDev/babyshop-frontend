@@ -229,6 +229,13 @@ const OrderDetailsPage: React.FC = () => {
                   </div>
                 )}
 
+                {!!order.discount && (
+                  <div className="flex items-center justify-between text-emerald-600">
+                    <dt>تخفیف</dt>
+                    <dd className="font-bold">−{formatNumber(order.discount)}</dd>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between border-t border-dashed border-brand-100 pt-3">
                   <dt className="text-sm font-black text-ink">مبلغ نهایی</dt>
                   <dd className="text-base font-black text-brand-600">{formatNumber(order.totalAmount)} تومان</dd>

@@ -32,9 +32,9 @@ const CheckoutPage: React.FC = () => {
     if (!leavingRef.current && cartItems.length === 0) navigate('/cart', { replace: true });
   }, [cartItems.length, navigate]);
 
-  const shippingCost = shippingMethod === 'post' ? environment.postShippingCost : 0;
-  const tax = useMemo(() => Math.round(totalPrice * environment.vatRate), [totalPrice]);
-  const totalAmount = totalPrice + tax + shippingCost;
+  // مبلغ نهایی همیشه از پاسخ سرور خوانده می‌شود؛ این‌ها فقط پیش‌نمایش فاکتور است.
+  const estimatedTax = useMemo(() => Math.round(totalPrice * environment.vatRate), [totalPrice]);
+  const estimatedTotal = totalPrice + estimatedTax;
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -53,21 +53,19 @@ const CheckoutPage: React.FC = () => {
 
     setSubmitting(true);
 
-    const shippingLabel = shippingMethod === 'post' ? 'پست پیشتاز' : 'پیک موتوری (پس‌کرایه)';
+    const shippingLabel = shippingMethod === 'post' ? 'پست پیشتاز' : 'پیک موتوری';
 
     const orderResult = await createOrder({
       ShippingAddress: `${shippingLabel} | ${address.trim()} | کد پستی: ${postalCode}`,
       PhoneNumber: phone,
       Email: email.trim() || undefined,
-      CustomerNote: [customerNote.trim(), `هزینه ارسال: ${shippingMethod === 'post' ? shippingCost : 'پس‌کرایه'}`, `مالیات: ${tax}`]
+      CustomerNote: [customerNote.trim(), `روش ارسال: ${shippingLabel}`, 'هزینه ارسال: پس‌کرایه (دریافت هنگام تحویل)']
         .filter(Boolean)
         .join(' | '),
       Items: cartItems.map((item) => ({
         ProductId: item.id,
-        ProductName: item.name,
         Quantity: item.quantity,
         UnitPrice: item.price,
-        AgeRange: item.sizeCode,
       })),
     });
 
@@ -77,7 +75,9 @@ const CheckoutPage: React.FC = () => {
       return;
     }
 
-    const paymentResult = await startPayment(orderResult.data.id, totalAmount);
+    // مبلغ قابل پرداخت = مبلغ نهایی محاسبه‌شده در سرور (شامل مالیات)
+    const payableAmount = orderResult.data.totalAmount;
+    const paymentResult = await startPayment(orderResult.data.id, payableAmount);
 
     if (!paymentResult.success || !paymentResult.data?.id) {
       toast.error(paymentResult.message ?? 'اتصال به درگاه پرداخت برقرار نشد.');
@@ -87,7 +87,7 @@ const CheckoutPage: React.FC = () => {
 
     leavingRef.current = true;
     clearCart();
-    navigate(`/bank-gateway?paymentId=${paymentResult.data.id}&amount=${totalAmount}`, { replace: true });
+    navigate(`/bank-gateway?paymentId=${paymentResult.data.id}&amount=${payableAmount}`, { replace: true });
   };
 
   const isBusy = submitting || orderLoading || paymentLoading;
@@ -211,7 +211,7 @@ const CheckoutPage: React.FC = () => {
                     id: 'post' as const,
                     title: 'پست پیشتاز',
                     description: 'ارسال به سراسر کشور (۳ تا ۵ روز کاری)',
-                    price: `${formatNumber(environment.postShippingCost)} تومان`,
+                    price: 'پس‌کرایه',
                   },
                   {
                     id: 'peyk' as const,
@@ -259,20 +259,18 @@ const CheckoutPage: React.FC = () => {
               </div>
               <div className="flex items-center justify-between text-ink-soft">
                 <dt>مالیات بر ارزش افزوده (۸٪)</dt>
-                <dd className="font-bold text-ink">{formatNumber(tax)} تومان</dd>
+                <dd className="font-bold text-ink">{formatNumber(estimatedTax)} تومان</dd>
               </div>
               <div className="flex items-center justify-between text-ink-soft">
                 <dt>هزینه ارسال</dt>
-                <dd className="font-bold text-ink">
-                  {shippingMethod === 'post' ? `${formatNumber(shippingCost)} تومان` : 'پس‌کرایه'}
-                </dd>
+                <dd className="font-bold text-ink">پس‌کرایه (هنگام تحویل)</dd>
               </div>
             </dl>
 
             <div className="mt-5 flex items-center justify-between">
               <span className="text-sm font-black text-ink">قابل پرداخت</span>
               <span className="text-lg font-black text-brand-600">
-                {formatNumber(totalAmount)}{' '}
+                {formatNumber(estimatedTotal)}{' '}
                 <span className="text-[10px] font-medium text-ink-light">تومان</span>
               </span>
             </div>

@@ -3,15 +3,21 @@ import { authService, type RegisterPayload, type ResetPasswordPayload } from '..
 import {
   endSession,
   getAuthSnapshot,
-  refreshAuthState,
-  setSessionToken,
+  setSession,
   subscribe,
 } from '../store/authStore';
 
 export interface ActionResult {
   success: boolean;
   message?: string;
+  /** کد تایید فقط در محیط Development توسط بک‌اند برگردانده می‌شود */
+  verificationCode?: string | null;
+  /** ورود با شماره‌ی تایید‌نشده انجام شده و کاربر باید کد را وارد کند */
+  requiresVerification?: boolean;
 }
+
+/** پیام «شماره تایید نشده» بک‌اند */
+const UNVERIFIED_PATTERN = /تأیید نشده|تایید نشده/;
 
 function toMessage(error: unknown): string {
   if (error instanceof Error && error.message) return error.message;
@@ -24,27 +30,36 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const run = useCallback(async <T,>(task: () => Promise<T>): Promise<{ ok: true; data: T } | { ok: false; message: string }> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await task();
-      return { ok: true, data };
-    } catch (err) {
-      const message = toMessage(err);
-      setError(message);
-      return { ok: false, message };
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const run = useCallback(
+    async <T,>(task: () => Promise<T>): Promise<{ ok: true; data: T } | { ok: false; message: string }> => {
+      setLoading(true);
+      setError(null);
+      try {
+        return { ok: true, data: await task() };
+      } catch (err) {
+        const message = toMessage(err);
+        setError(message);
+        return { ok: false, message };
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   const login = useCallback(
     async (payload: { phoneNumber: string; password: string }): Promise<ActionResult> => {
       const result = await run(() => authService.login(payload));
-      if (!result.ok) return { success: false, message: result.message };
 
-      setSessionToken(result.data);
+      if (!result.ok) {
+        return {
+          success: false,
+          message: result.message,
+          requiresVerification: UNVERIFIED_PATTERN.test(result.message),
+        };
+      }
+
+      setSession(result.data.token, result.data.user);
       return { success: true };
     },
     [run],
@@ -53,7 +68,10 @@ export const useAuth = () => {
   const register = useCallback(
     async (payload: RegisterPayload): Promise<ActionResult> => {
       const result = await run(() => authService.register(payload));
-      return result.ok ? { success: true } : { success: false, message: result.message };
+
+      return result.ok
+        ? { success: true, verificationCode: result.data.verificationCode }
+        : { success: false, message: result.message };
     },
     [run],
   );
@@ -61,14 +79,10 @@ export const useAuth = () => {
   const verifyPhone = useCallback(
     async (phoneNumber: string, code: string): Promise<ActionResult> => {
       const result = await run(() => authService.verifyPhone(phoneNumber, code));
+
       if (!result.ok) return { success: false, message: result.message };
 
-      // اگر بک‌اند توکن داد، کاربر مستقیم وارد می‌شود
-      if (result.data) {
-        setSessionToken(result.data);
-        return { success: true };
-      }
-
+      setSession(result.data.token, result.data.user);
       return { success: true };
     },
     [run],
@@ -77,7 +91,10 @@ export const useAuth = () => {
   const forgotPassword = useCallback(
     async (phoneNumber: string): Promise<ActionResult> => {
       const result = await run(() => authService.forgotPassword(phoneNumber));
-      return result.ok ? { success: true } : { success: false, message: result.message };
+
+      return result.ok
+        ? { success: true, verificationCode: result.data.verificationCode }
+        : { success: false, message: result.message };
     },
     [run],
   );
@@ -92,7 +109,6 @@ export const useAuth = () => {
 
   const logout = useCallback(() => {
     endSession();
-    refreshAuthState();
   }, []);
 
   return {
@@ -106,6 +122,8 @@ export const useAuth = () => {
     error,
     isAuthenticated: session.isAuthenticated,
     isAdmin: session.isAdmin,
+    isManager: session.isManager,
+    roles: session.roles,
     user: session.user,
   };
 };

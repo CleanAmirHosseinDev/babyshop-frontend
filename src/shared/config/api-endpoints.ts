@@ -1,5 +1,5 @@
 /**
- * تمام مسیرهای API در یک جا؛ در صورت تغییر بک‌اند فقط همین فایل اصلاح می‌شود.
+ * مسیرهای API که فرانت‌اند استفاده می‌کند — منطبق با کنترلرهای بک‌اند (BabyShop-backend).
  */
 export const endpoints = {
   auth: {
@@ -12,9 +12,6 @@ export const endpoints = {
   products: {
     base: '/Product',
     byId: (id: number | string) => `/Product/${id}`,
-    search: '/Product/search',
-    byGender: (genderId: number) => `/Product/by-gender/${genderId}`,
-    byCategory: (categoryId: number) => `/Product/category/${categoryId}`,
   },
   categories: {
     base: '/Category',
@@ -47,5 +44,7 @@ export const endpoints = {
     byId: (id: number | string) => `/Ticket/${id}`,
     reply: '/Ticket/reply',
     adminAll: '/admin/AdminTicket',
+    adminStatus: '/admin/AdminTicket/status',
+    adminStats: '/admin/AdminTicket/dashboard/stats',
   },
 } as const;

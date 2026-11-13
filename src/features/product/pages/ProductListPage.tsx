@@ -3,12 +3,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { AlertCircle, Pencil, Plus, Search, ShoppingBag, Tag, Trash2 } from 'lucide-react';
 import { useProducts } from '../hooks/useProducts';
+import { useAuth } from '../../../shared/hooks/useAuth';
 import { formatNumber } from '../../../shared/utils/format';
 import { PLACEHOLDER_IMAGE, getFirstImageUrl } from '../../../shared/utils/imageUrl';
 
 const ProductListPage: React.FC = () => {
   const navigate = useNavigate();
   const { products, deleteProduct, loading, error, refresh } = useProducts();
+  // حذف محصول در بک‌اند فقط برای Admin مجاز است (سیاست AdminOnly)
+  const { isAdmin } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredProducts = useMemo(() => {
@@ -135,7 +138,14 @@ const ProductListPage: React.FC = () => {
                     </td>
 
                     <td className="p-4">
-                      <p className="font-bold text-ink">{product.name}</p>
+                      <p className="font-bold text-ink">
+                        {product.name}
+                        {product.isActive === false && (
+                          <span className="ms-2 rounded-full bg-gray-100 px-2 py-0.5 text-[9px] font-black text-gray-500">
+                            غیرفعال
+                          </span>
+                        )}
+                      </p>
                       {product.slug && (
                         <p className="mt-1 w-max rounded bg-brand-50 px-2 py-0.5 font-mono text-[10px] text-ink-light" dir="ltr">
                           {product.slug}
@@ -161,14 +171,16 @@ const ProductListPage: React.FC = () => {
                         >
                           <Pencil size={15} aria-hidden="true" />
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(product.id, product.name)}
-                          aria-label={`حذف ${product.name}`}
-                          className="grid h-8 w-8 place-items-center rounded-lg bg-red-50 text-red-500 transition-colors hover:bg-red-500 hover:text-white"
-                        >
-                          <Trash2 size={15} aria-hidden="true" />
-                        </button>
+                        {isAdmin && (
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(product.id, product.name)}
+                            aria-label={`حذف ${product.name}`}
+                            className="grid h-8 w-8 place-items-center rounded-lg bg-red-50 text-red-500 transition-colors hover:bg-red-500 hover:text-white"
+                          >
+                            <Trash2 size={15} aria-hidden="true" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

@@ -2,7 +2,7 @@ import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { PageLoader, RequireAdmin, RequireAuth, ScrollToTop } from './shared/components/RouteGuards';
+import { PageLoader, RequireAdmin, RequireAuth, RequireManager, ScrollToTop } from './shared/components/RouteGuards';
 
 // صفحات به‌صورت تنبل (lazy) بارگذاری می‌شوند تا حجم باندل اولیه کم بماند
 const HomePage = lazy(() => import('./features/home/pages/HomePage'));
@@ -103,13 +103,13 @@ function App() {
             }
           />
 
-          {/* پنل مدیریت */}
+          {/* پنل مدیریت فروشگاه (Admin/Manager) */}
           <Route
             path="/admin/tickets"
             element={
-              <RequireAdmin>
+              <RequireManager>
                 <AdminTicketsPage />
-              </RequireAdmin>
+              </RequireManager>
             }
           />
           <Route
@@ -123,41 +123,41 @@ function App() {
           <Route
             path="/admin/inventory"
             element={
-              <RequireAdmin>
+              <RequireManager>
                 <InventoryListPage />
-              </RequireAdmin>
+              </RequireManager>
             }
           />
           <Route
             path="/admin/categories"
             element={
-              <RequireAdmin>
+              <RequireManager>
                 <CategoryListPage />
-              </RequireAdmin>
+              </RequireManager>
             }
           />
           <Route
             path="/products"
             element={
-              <RequireAdmin>
+              <RequireManager>
                 <ProductListPage />
-              </RequireAdmin>
+              </RequireManager>
             }
           />
           <Route
             path="/products/create"
             element={
-              <RequireAdmin>
+              <RequireManager>
                 <ProductCreatePage />
-              </RequireAdmin>
+              </RequireManager>
             }
           />
           <Route
             path="/products/edit/:id"
             element={
-              <RequireAdmin>
+              <RequireManager>
                 <ProductEditPage />
-              </RequireAdmin>
+              </RequireManager>
             }
           />
 

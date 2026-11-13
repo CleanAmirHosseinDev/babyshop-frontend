@@ -26,7 +26,9 @@ const ForgotPasswordPage: React.FC = () => {
 
     if (result.success) {
       toast.success('کد بازیابی ارسال شد.');
-      navigate('/reset-password', { state: { phoneNumber } });
+      navigate('/reset-password', {
+        state: { phoneNumber, code: result.verificationCode ?? undefined },
+      });
     }
   };
 

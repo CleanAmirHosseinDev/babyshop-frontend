@@ -7,6 +7,24 @@ interface GuardProps {
   children: React.ReactElement;
 }
 
+function Forbidden({ title, message }: { title: string; message: string }) {
+  return (
+    <div className="container-shop flex min-h-[60vh] flex-col items-center justify-center text-center">
+      <span className="grid h-16 w-16 place-items-center rounded-3xl bg-red-50 text-red-500">
+        <ShieldAlert size={32} aria-hidden="true" />
+      </span>
+      <h1 className="mt-5 text-xl font-black text-ink">{title}</h1>
+      <p className="mt-2 max-w-sm text-sm leading-7 text-ink-soft">{message}</p>
+      <Link
+        to="/"
+        className="mt-6 rounded-2xl bg-brand-500 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-brand-200 transition-colors hover:bg-brand-600"
+      >
+        بازگشت به فروشگاه
+      </Link>
+    </div>
+  );
+}
+
 /** مسیرهای نیازمند ورود */
 export const RequireAuth: React.FC<GuardProps> = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -19,7 +37,7 @@ export const RequireAuth: React.FC<GuardProps> = ({ children }) => {
   return children;
 };
 
-/** مسیرهای مخصوص مدیر */
+/** مسیرهای مخصوص Admin (سیاست AdminOnly در بک‌اند) */
 export const RequireAdmin: React.FC<GuardProps> = ({ children }) => {
   const { isAuthenticated, isAdmin } = useAuth();
   const location = useLocation();
@@ -30,21 +48,31 @@ export const RequireAdmin: React.FC<GuardProps> = ({ children }) => {
 
   if (!isAdmin) {
     return (
-      <div className="container-shop flex min-h-[60vh] flex-col items-center justify-center text-center">
-        <span className="grid h-16 w-16 place-items-center rounded-3xl bg-red-50 text-red-500">
-          <ShieldAlert size={32} aria-hidden="true" />
-        </span>
-        <h1 className="mt-5 text-xl font-black text-ink">دسترسی غیرمجاز</h1>
-        <p className="mt-2 max-w-sm text-sm leading-7 text-ink-soft">
-          این بخش مخصوص مدیر فروشگاه است. اگر فکر می‌کنید اشتباهی رخ داده، با پشتیبانی تماس بگیرید.
-        </p>
-        <Link
-          to="/"
-          className="mt-6 rounded-2xl bg-brand-500 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-brand-200 transition-colors hover:bg-brand-600"
-        >
-          بازگشت به فروشگاه
-        </Link>
-      </div>
+      <Forbidden
+        title="دسترسی غیرمجاز"
+        message="این بخش فقط برای مدیر کل (Admin) در دسترس است. اگر فکر می‌کنید اشتباهی رخ داده با پشتیبانی تماس بگیرید."
+      />
+    );
+  }
+
+  return children;
+};
+
+/** مسیرهای مدیریت فروشگاه (سیاست ManagerOnly در بک‌اند: Admin یا Manager) */
+export const RequireManager: React.FC<GuardProps> = ({ children }) => {
+  const { isAuthenticated, isManager } = useAuth();
+  const location = useLocation();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace state={{ from: `${location.pathname}${location.search}` }} />;
+  }
+
+  if (!isManager) {
+    return (
+      <Forbidden
+        title="دسترسی غیرمجاز"
+        message="این بخش مخصوص مدیران فروشگاه است. اگر فکر می‌کنید اشتباهی رخ داده با پشتیبانی تماس بگیرید."
+      />
     );
   }
 

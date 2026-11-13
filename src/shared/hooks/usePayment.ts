@@ -1,20 +1,24 @@
 import { useCallback, useState } from 'react';
 import { endpoints } from '../config/api-endpoints';
 import { http } from '../services/http';
-import type { PaymentResult } from '../types/models';
+import type { Payment } from '../types/models';
 
 export const usePayment = () => {
   const [loading, setLoading] = useState(false);
 
-  /** شروع پرداخت و ایجاد تراکنش */
+  /** ایجاد تراکنش برای یک سفارش */
   const startPayment = useCallback(
-    async (orderId: number, amount: number): Promise<{ success: boolean; data?: PaymentResult; message?: string }> => {
+    async (
+      orderId: number,
+      amount: number,
+      method = 'Online',
+    ): Promise<{ success: boolean; data?: Payment; message?: string }> => {
       setLoading(true);
       try {
-        const data = await http.post<PaymentResult>(endpoints.payment.base, {
+        const data = await http.post<Payment>(endpoints.payment.base, {
           OrderId: orderId,
           Amount: amount,
-          PaymentMethod: 'Online',
+          PaymentMethod: method,
         });
         return { success: true, data };
       } catch (error) {
@@ -26,7 +30,7 @@ export const usePayment = () => {
     [],
   );
 
-  /** تایید نهایی پرداخت */
+  /** تایید نهایی پرداخت (بک‌اند وضعیت سفارش را Paid می‌کند) */
   const verifyPayment = useCallback(
     async (paymentId: number, referenceNumber: string): Promise<{ success: boolean; message?: string }> => {
       setLoading(true);

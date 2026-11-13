@@ -6,7 +6,7 @@ import { useOrders } from '../../order/hooks/useOrders';
 import { endpoints } from '../../../shared/config/api-endpoints';
 import { http } from '../../../shared/services/http';
 import { formatDate, formatNumber } from '../../../shared/utils/format';
-import type { Order } from '../../../shared/types/models';
+import type { OrderSummary } from '../../../shared/types/models';
 
 const STATUS_LABELS: Record<string, string> = {
   pending: 'در انتظار',
@@ -19,7 +19,7 @@ const STATUS_LABELS: Record<string, string> = {
 const AdminOrdersPage: React.FC = () => {
   const { getAllOrdersAdmin, updateStatus, loading } = useOrders();
 
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [isDeliveryModalOpen, setIsDeliveryModalOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [trackingNumber, setTrackingNumber] = useState('');
@@ -67,9 +67,10 @@ const AdminOrdersPage: React.FC = () => {
     setSaving(true);
 
     try {
+      // آدرس کامل در OrderDto است (خلاصه‌ی سفارش آدرس ندارد)؛ آدرس در فاکتور سفارش ثبت شده است.
       const delivery = await http.post<{ id: number }>(endpoints.delivery.base, {
         OrderId: selectedOrderId,
-        Address: currentOrder?.shippingAddress ?? 'موجود در فاکتور سفارش',
+        Address: 'ثبت‌شده در فاکتور سفارش',
         PhoneNumber: currentOrder?.phoneNumber ?? '00000000000',
         PostalCode: '0000000000',
         Carrier: carrier,
@@ -192,9 +193,9 @@ const AdminOrdersPage: React.FC = () => {
                         className="w-full cursor-pointer rounded-xl border border-brand-100 bg-white p-2 text-[11px] font-bold text-ink-soft outline-none focus:border-brand-300"
                       >
                         <option value="">انتخاب کنید…</option>
-                        <option value="Pending">در انتظار ⏳</option>
                         <option value="Paid">پرداخت شده ✅</option>
                         <option value="Shipped">ارسال شده 🚚</option>
+                        <option value="Delivered">تحویل داده شده 🎁</option>
                         <option value="Cancelled">لغو سفارش ❌</option>
                       </select>
                     </td>
