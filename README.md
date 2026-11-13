@@ -1,73 +1,50 @@
-# React + TypeScript + Vite
+# زیزی کیدز — فروشگاه اینترنتی لباس کودک
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+فرانت‌اند فروشگاه با React + TypeScript + Vite + Tailwind CSS.
 
-Currently, two official plugins are available:
+## اجرا
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+cp .env.example .env      # سپس مقدار VITE_API_URL را تنظیم کنید
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+| دستور | کاربرد |
+| --- | --- |
+| `npm run dev` | اجرای محیط توسعه (پورت 5173) |
+| `npm run build` | بررسی تایپ‌ها و ساخت نسخه تولید در `dist` |
+| `npm run preview` | پیش‌نمایش نسخه ساخته‌شده |
+| `npm run lint` | بررسی قواعد ESLint |
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## تنظیمات محیطی
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+تنها متغیر لازم `VITE_API_URL` است (آدرس پایه‌ی API، بدون اسلش انتهایی):
+
 ```
+VITE_API_URL=https://localhost:7168/api
+```
+
+فایل `.env` در مخزن قرار نمی‌گیرد؛ برای اجرای پروژه آن را از روی `.env.example` بسازید.
+
+## ساختار
+
+```
+src/
+  features/        صفحات و منطق هر حوزه (home, product, cart, order, auth, dashboard, admin)
+  shared/
+    components/    کامپوننت‌های مشترک UI (هدر/فوتر فروشگاه، گاردهای مسیر، ...)
+    context/       سبد خرید و علاقه‌مندی‌ها (با ذخیره‌سازی در localStorage)
+    hooks/         هوک‌های داده (محصولات، سفارش، پرداخت، تیکت، ...)
+    services/      لایه‌ی ارتباط با API (http، احراز هویت، نشست)
+    store/         استور وضعیت احراز هویت
+    config/        تنظیمات محیط و مسیرهای API
+    utils/         قالب‌بندی اعداد/تاریخ و آدرس تصاویر
+```
+
+## نکات فنی
+
+- تمام درخواست‌ها از `shared/services/http.ts` عبور می‌کنند (هدر توکن، timeout، پیام خطای یکدست و خروج خودکار هنگام 401).
+- مسیرهای مدیریتی با `RequireAdmin` محافظت می‌شوند؛ کنترل نهایی دسترسی همیشه باید در بک‌اند انجام شود.
+- صفحات با `React.lazy` کدسپلیت شده‌اند و باندل اولیه فقط شامل ویترین است.
+- تصاویر با `loading="lazy"` و نسبت ابعاد ثابت رندر می‌شوند تا پرش چیدمان (CLS) نداشته باشیم.

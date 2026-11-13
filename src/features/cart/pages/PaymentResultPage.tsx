@@ -1,52 +1,96 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
+import StoreHeader from '../../../shared/components/StoreHeader';
+import StoreFooter from '../../../shared/components/StoreFooter';
 import { usePayment } from '../../../shared/hooks/usePayment';
+
+type Status = 'loading' | 'success' | 'error';
 
 const PaymentResultPage: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const { verifyPayment } = usePayment();
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+
+  const paymentId = Number(searchParams.get('paymentId'));
+  const isOk = searchParams.get('status') === 'OK';
+  const reference = searchParams.get('ref') ?? `ZIZI-${paymentId}`;
+  const isValidRequest = isOk && Number.isFinite(paymentId) && paymentId > 0;
+
+  const [verification, setVerification] = useState<{ status: 'success' | 'error'; message?: string } | null>(null);
   const hasVerified = useRef(false);
 
   useEffect(() => {
-    const paymentId = searchParams.get('paymentId');
-    const isOk = searchParams.get('status') === 'OK'; // چک کردن تایید درگاه
+    if (!isValidRequest || hasVerified.current) return;
+    hasVerified.current = true;
 
-    if (paymentId && isOk && !hasVerified.current) {
-      hasVerified.current = true;
-      const fakeRef = "ZIZI-" + Math.random().toString(36).substring(2, 9).toUpperCase();
-      
-      verifyPayment(Number(paymentId), fakeRef).then((res: any) => {
-        if (res && res.success) setStatus('success');
-        else setStatus('error');
-      });
-    } else if (!isOk) {
-      setStatus('error');
-    }
-  }, [searchParams]);
+    verifyPayment(paymentId, reference).then((result) => {
+      setVerification(
+        result.success
+          ? { status: 'success' }
+          : { status: 'error', message: result.message ?? 'تایید نهایی پرداخت انجام نشد.' },
+      );
+    });
+  }, [isValidRequest, paymentId, reference, verifyPayment]);
+
+  // وضعیت از روی پارامترهای آدرس استنتاج می‌شود (بدون setState اضافه در افکت)
+  const status: Status = !isValidRequest ? 'error' : (verification?.status ?? 'loading');
+  const message = !isValidRequest
+    ? isOk
+      ? 'شناسه‌ی تراکنش معتبر نیست.'
+      : 'پرداخت لغو شد یا از سمت بانک تایید نشد.'
+    : (verification?.message ?? null);
 
   return (
-    <div className="min-h-screen bg-[#FFF9F9] flex items-center justify-center p-8 text-center" dir="rtl">
-       <div className="bg-white p-12 rounded-[4rem] shadow-2xl border-4 border-pink-100 max-w-md w-full">
-          {status === 'loading' && <p className="animate-pulse text-pink-500 font-bold">در حال تایید نهایی... ⏳</p>}
+    <div className="min-h-screen bg-[#FFFAFB] text-right">
+      <StoreHeader />
+
+      <main className="container-shop grid min-h-[55vh] place-items-center py-12">
+        <div className="w-full max-w-md rounded-[2rem] border border-brand-100 bg-white p-8 text-center shadow-card">
+          {status === 'loading' && (
+            <>
+              <Loader2 className="mx-auto animate-spin text-brand-500" size={44} aria-hidden="true" />
+              <h1 className="mt-4 text-lg font-black text-ink">در حال تایید پرداخت…</h1>
+              <p className="mt-2 text-sm text-ink-soft">لطفاً صفحه را نبندید.</p>
+            </>
+          )}
+
           {status === 'success' && (
             <>
-              <div className="text-8xl mb-6">✅</div>
-              <h1 className="text-2xl font-black text-green-500">پرداخت موفق!</h1>
-              <p className="text-gray-400 mt-4 mb-8">سفارش شما با موفقیت ثبت و تایید شد. 🧸✨</p>
-              <button onClick={() => navigate('/dashboard')} className="w-full bg-pink-500 text-white py-4 rounded-2xl font-bold shadow-lg">مشاهده سفارش</button>
+              <CheckCircle2 className="mx-auto text-emerald-500" size={52} aria-hidden="true" />
+              <h1 className="mt-4 text-xl font-black text-ink">پرداخت با موفقیت انجام شد</h1>
+              <p className="mt-2 text-sm leading-7 text-ink-soft">
+                سفارش شما ثبت شد و پس از آماده‌سازی برای شما ارسال می‌شود. 🧸
+              </p>
+              <div className="mt-6 flex flex-col gap-2 sm:flex-row">
+                <Link to="/dashboard" className="btn-primary flex-1 text-sm">
+                  پیگیری سفارش‌ها
+                </Link>
+                <Link to="/" className="btn-ghost flex-1 text-sm">
+                  ادامه خرید
+                </Link>
+              </div>
             </>
           )}
+
           {status === 'error' && (
             <>
-              <div className="text-8xl mb-6">❌</div>
-              <h1 className="text-2xl font-black text-red-500">خطا در تراکنش</h1>
-              <p className="text-gray-400 mt-4 mb-8">یا انصراف دادید یا مشکلی در پرداخت پیش اومده.</p>
-              <button onClick={() => navigate('/cart')} className="w-full bg-gray-100 py-4 rounded-2xl font-bold">بازگشت به سبد خرید</button>
+              <XCircle className="mx-auto text-red-500" size={52} aria-hidden="true" />
+              <h1 className="mt-4 text-xl font-black text-ink">پرداخت انجام نشد</h1>
+              <p className="mt-2 text-sm leading-7 text-ink-soft">{message}</p>
+              <div className="mt-6 flex flex-col gap-2 sm:flex-row">
+                <Link to="/cart" className="btn-primary flex-1 text-sm">
+                  بازگشت به سبد خرید
+                </Link>
+                <Link to="/dashboard" className="btn-ghost flex-1 text-sm">
+                  سفارش‌های من
+                </Link>
+              </div>
             </>
           )}
-       </div>
+        </div>
+      </main>
+
+      <StoreFooter />
     </div>
   );
 };

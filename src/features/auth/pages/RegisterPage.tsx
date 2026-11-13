@@ -1,45 +1,173 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { UserPlus } from 'lucide-react';
+import AuthShell from '../../../shared/components/AuthShell';
 import { useAuth } from '../../../shared/hooks/useAuth';
+import { digitsOnly, isValidIranMobile } from '../../../shared/utils/format';
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
   const { register, loading, error } = useAuth();
+
   const [fullName, setFullName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [formError, setFormError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setFormError(null);
+
+    if (fullName.trim().length < 3) {
+      setFormError('نام و نام خانوادگی را کامل وارد کنید.');
+      return;
+    }
+
+    if (!isValidIranMobile(phoneNumber)) {
+      setFormError('شماره موبایل باید ۱۱ رقم و با ۰۹ شروع شود.');
+      return;
+    }
+
+    if (password.length < 6) {
+      setFormError('رمز عبور باید حداقل ۶ کاراکتر باشد.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setFormError('رمز عبور و تکرار آن یکسان نیستند.');
+      return;
+    }
+
     const result = await register({ fullName, phoneNumber, email, password, confirmPassword });
+
     if (result.success) {
       navigate('/verify-phone', { state: { phoneNumber } });
     }
   };
 
+  const message = formError ?? error;
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 via-white to-lavender-50 p-4 text-right">
-      <div className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl p-8 border-4 border-pink-100">
-        <div className="flex justify-center mb-4">
-          <div className="w-20 h-20 rounded-full bg-pink-100 flex items-center justify-center text-5xl">🧸</div>
+    <AuthShell
+      title="ثبت‌نام در زیزی کیدز"
+      subtitle="برای پیگیری سفارش‌ها و خرید سریع‌تر عضو شوید"
+      icon="🧸"
+      footer={
+        <>
+          قبلاً عضو شده‌اید؟{' '}
+          <Link to="/login" className="font-bold text-brand-600 hover:underline">
+            وارد شوید
+          </Link>
+        </>
+      }
+    >
+      {message && (
+        <div role="alert" className="mb-4 rounded-2xl border border-red-100 bg-red-50 p-3 text-center text-xs font-bold text-red-600">
+          {message}
         </div>
-        <h1 className="text-center font-bold text-3xl text-pink-500 mb-6">ثبت‌نام</h1>
-        {error && <div className="bg-red-50 text-red-500 text-sm p-3 mb-4 rounded-xl text-center">{error}</div>}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="نام و نام خانوادگی" required className="w-full px-5 py-3 rounded-2xl border border-pink-100 focus:border-pink-400 focus:outline-none bg-pink-50/30" />
-          <input type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="شماره موبایل" required className="w-full px-5 py-3 rounded-2xl border border-pink-100 focus:border-pink-400 focus:outline-none bg-pink-50/30 text-right" dir="ltr" />
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="ایمیل (اختیاری)" className="w-full px-5 py-3 rounded-2xl border border-pink-100 focus:border-pink-400 focus:outline-none bg-pink-50/30 text-right" dir="ltr" />
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="رمز عبور" required className="w-full px-5 py-3 rounded-2xl border border-pink-100 focus:border-pink-400 focus:outline-none bg-pink-50/30" />
-          <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="تکرار رمز عبور" required className="w-full px-5 py-3 rounded-2xl border border-pink-100 focus:border-pink-400 focus:outline-none bg-pink-50/30" />
-          <button type="submit" disabled={loading} className="w-full bg-pink-500 text-white font-bold py-4 rounded-2xl shadow-lg">
-            {loading ? 'در حال ثبت‌نام...' : '🧸 ثبت‌نام'}
-          </button>
-        </form>
-        <p className="text-center text-gray-400 text-sm mt-6">قبلاً عضو شدی؟ <Link to="/login" className="text-pink-500 font-bold hover:underline">وارد شو</Link></p>
-      </div>
-    </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        <div>
+          <label htmlFor="register-name" className="mb-1.5 block text-xs font-bold text-ink-soft">
+            نام و نام خانوادگی
+          </label>
+          <input
+            id="register-name"
+            type="text"
+            autoComplete="name"
+            value={fullName}
+            onChange={(event) => setFullName(event.target.value)}
+            placeholder="مثلاً سارا محمدی"
+            className="field"
+            required
+          />
+        </div>
+
+        <div>
+          <label htmlFor="register-phone" className="mb-1.5 block text-xs font-bold text-ink-soft">
+            شماره موبایل
+          </label>
+          <input
+            id="register-phone"
+            type="tel"
+            inputMode="numeric"
+            autoComplete="tel"
+            value={phoneNumber}
+            onChange={(event) => setPhoneNumber(digitsOnly(event.target.value, 11))}
+            placeholder="09123456789"
+            className="field font-mono"
+            dir="ltr"
+            maxLength={11}
+            required
+          />
+        </div>
+
+        <div>
+          <label htmlFor="register-email" className="mb-1.5 block text-xs font-bold text-ink-soft">
+            ایمیل (اختیاری)
+          </label>
+          <input
+            id="register-email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="you@example.com"
+            className="field"
+            dir="ltr"
+          />
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="register-password" className="mb-1.5 block text-xs font-bold text-ink-soft">
+              رمز عبور
+            </label>
+            <input
+              id="register-password"
+              type="password"
+              autoComplete="new-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="حداقل ۶ کاراکتر"
+              className="field"
+              required
+              minLength={6}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="register-confirm" className="mb-1.5 block text-xs font-bold text-ink-soft">
+              تکرار رمز عبور
+            </label>
+            <input
+              id="register-confirm"
+              type="password"
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              placeholder="••••••••"
+              className="field"
+              required
+              minLength={6}
+            />
+          </div>
+        </div>
+
+        <button type="submit" disabled={loading} className="btn-primary w-full py-4">
+          {loading ? (
+            'در حال ثبت‌نام…'
+          ) : (
+            <>
+              <UserPlus size={18} aria-hidden="true" /> ثبت‌نام
+            </>
+          )}
+        </button>
+      </form>
+    </AuthShell>
   );
 };
 

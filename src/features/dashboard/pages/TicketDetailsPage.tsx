@@ -1,124 +1,174 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { ArrowRight, SendHorizontal } from 'lucide-react';
 import { useTickets } from '../../../shared/hooks/useTickets';
+import { formatTime } from '../../../shared/utils/format';
+import type { Ticket } from '../../../shared/types/models';
 
 const TicketDetailsPage: React.FC = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const { getTicketDetails, sendReply, loading } = useTickets();
-  const [ticket, setTicket] = useState<any>(null);
+
+  const [ticket, setTicket] = useState<Ticket | null>(null);
   const [replyMessage, setReplyMessage] = useState('');
-  
-  // این رفرنس برای اینه که هروقت پیام جدیدی اومد، اسکرول خودکار بره پایین
+  const [sending, setSending] = useState(false);
+  const [notFound, setNotFound] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const loadData = async () => {
-    const data = await getTicketDetails(Number(id));
+  const loadTicket = useCallback(async () => {
+    const ticketId = Number(id);
+    if (!Number.isFinite(ticketId)) {
+      setNotFound(true);
+      return;
+    }
+
+    const data = await getTicketDetails(ticketId);
     setTicket(data);
-  };
+    setNotFound(!data);
+  }, [getTicketDetails, id]);
 
   useEffect(() => {
-    loadData();
-  }, [id]);
+    // داده‌خوانی در زمان mount؛ این rule برای افکت‌های همگام با DOM است
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadTicket();
+  }, [loadTicket]);
 
   useEffect(() => {
-    // اسکرول نرم به آخرین پیام
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [ticket]);
 
   const handleSendReply = async () => {
-    if (!replyMessage.trim()) return;
-    const result = await sendReply(Number(id), replyMessage);
+    const message = replyMessage.trim();
+    if (!message || sending) return;
+
+    setSending(true);
+    const result = await sendReply(Number(id), message);
+    setSending(false);
+
     if (result.success) {
       setReplyMessage('');
-      loadData(); 
+      await loadTicket();
     } else {
-      alert("خطا در ارسال پیام!");
+      toast.error(result.message ?? 'ارسال پیام انجام نشد.');
     }
   };
 
-  // هندل کردن دکمه Enter برای ارسال پیام
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
       handleSendReply();
     }
   };
 
-  if (!ticket && loading) return <div className="min-h-screen flex items-center justify-center p-20 text-center text-pink-500 font-bold animate-pulse text-xl">در حال لود گفتگو... 🍭</div>;
-  if (!ticket) return <div className="min-h-screen flex items-center justify-center p-20 text-center text-red-500 font-bold text-xl">گفتگو پیدا نشد! 🎈</div>;
+  if (loading && !ticket) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-[#FFFAFB]">
+        <span className="h-10 w-10 animate-spin rounded-full border-4 border-brand-100 border-t-brand-500" />
+      </div>
+    );
+  }
+
+  if (notFound || !ticket) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-[#FFFAFB] p-4 text-center">
+        <div>
+          <p className="text-4xl" aria-hidden="true">
+            🎈
+          </p>
+          <h1 className="mt-4 text-lg font-black text-ink">این گفتگو پیدا نشد</h1>
+          <Link to="/dashboard" className="btn-primary mt-6 text-sm">
+            بازگشت به حساب کاربری
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const status = String(ticket.status ?? '').toLowerCase();
+  const isClosed = status === 'closed' || status === 'resolved';
+  const replies = ticket.replies ?? [];
 
   return (
-    <div className="min-h-screen bg-[#FFF9F9] p-4 md:p-8 text-right font-sans" dir="rtl">
-      <div className="max-w-3xl mx-auto bg-white rounded-[3rem] shadow-2xl overflow-hidden border-4 border-pink-100 flex flex-col h-[85vh]">
-        
-        {/* هدر گفتگو */}
-        <header className="p-6 bg-pink-500 text-white flex justify-between items-center shadow-lg z-10 relative">
-           <button onClick={() => navigate('/dashboard')} className="bg-white/20 px-4 py-2 rounded-full font-bold hover:bg-white/30 transition-all text-sm">← برگشت</button>
-           <div className="text-center">
-              <h2 className="font-black text-lg">{ticket.subject}</h2>
-              <span className="text-[10px] opacity-80 font-mono tracking-widest">تیکت #{ticket.ticketNumber}</span>
-           </div>
-           {/* نمایش وضعیت تیکت در هدر */}
-           <div className={`text-[10px] font-black px-3 py-1 rounded-full ${ticket.status === 'Closed' ? 'bg-gray-100 text-gray-500' : 'bg-white/20'}`}>
-              {ticket.status === 'Open' ? 'پاسخ نداده' : ticket.status === 'Closed' ? 'بسته شده' : 'در حال بررسی'}
-           </div>
+    <div className="min-h-screen bg-[#FFFAFB] p-4 text-right">
+      <div className="mx-auto flex h-[85vh] max-w-3xl flex-col overflow-hidden rounded-[2rem] border border-brand-100 bg-white shadow-2xl">
+        <header className="flex items-center justify-between gap-3 bg-brand-500 px-5 py-4 text-white">
+          <Link
+            to="/dashboard"
+            className="flex items-center gap-1 rounded-full bg-white/20 px-3 py-1.5 text-[11px] font-bold transition-colors hover:bg-white/30"
+          >
+            <ArrowRight size={14} aria-hidden="true" /> بازگشت
+          </Link>
+
+          <div className="min-w-0 text-center">
+            <h1 className="truncate text-sm font-black">{ticket.subject}</h1>
+            <span className="font-mono text-[10px] opacity-80" dir="ltr">
+              #{ticket.ticketNumber ?? ticket.id}
+            </span>
+          </div>
+
+          <span className="rounded-full bg-white/20 px-3 py-1 text-[10px] font-black">
+            {isClosed ? 'بسته شده' : status === 'open' ? 'در انتظار پاسخ' : 'در حال بررسی'}
+          </span>
         </header>
 
-        {/* بخش پیام‌ها (چت‌روم) */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-pink-50/20 shadow-inner custom-scrollbar">
-          
-          {/* لیست پاسخ‌ها (پیام اصلی کاربر هم تو همین لیسته) */}
-          {ticket.replies?.map((reply: any) => (
-            <div key={reply.id} className={`flex flex-col ${reply.isAdminReply ? 'items-start' : 'items-end'}`}>
-               <div className={`p-5 rounded-[2rem] shadow-sm max-w-[85%] relative 
-                 ${reply.isAdminReply ? 'bg-blue-500 text-white rounded-tl-none shadow-blue-200' : 'bg-white text-gray-700 rounded-tr-none border border-pink-100 shadow-pink-100'}`}
-               >
-                  <div className="text-[10px] font-black mb-2 opacity-80 border-b border-white/20 pb-1 w-max">
-                    {reply.isAdminReply ? '🧸 پشتیبانی زی‌زی' : 'شما'}
-                  </div>
-                  <p className="leading-loose whitespace-pre-wrap">{reply.message}</p>
-                  <div className="flex justify-end mt-2">
-                    <span className="text-[9px] opacity-60 font-mono">
-                      {new Date(reply.createdAt).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </div>
-                  
-                  {/* آیکون روی پیام */}
-                  {reply.isAdminReply 
-                    ? <div className="absolute -top-3 -left-3 text-2xl bg-white rounded-full p-1 shadow-sm">🎧</div>
-                    : <div className="absolute -top-3 -right-3 text-2xl bg-pink-50 rounded-full p-1 shadow-sm">👤</div>
-                  }
-               </div>
+        <div className="flex-1 space-y-4 overflow-y-auto bg-brand-50/20 p-5">
+          {replies.length === 0 && (
+            <p className="py-10 text-center text-xs text-ink-light">هنوز پیامی در این گفتگو وجود ندارد.</p>
+          )}
+
+          {replies.map((reply) => (
+            <div key={reply.id} className={`flex ${reply.isAdminReply ? 'justify-start' : 'justify-end'}`}>
+              <div
+                className={`max-w-[85%] rounded-3xl px-4 py-3 text-xs leading-7 shadow-sm ${
+                  reply.isAdminReply
+                    ? 'bg-lavender-500 text-white'
+                    : 'border border-brand-100 bg-white text-ink'
+                }`}
+              >
+                <p className={`mb-1 text-[10px] font-black ${reply.isAdminReply ? 'text-white/80' : 'text-brand-500'}`}>
+                  {reply.isAdminReply ? '🎧 پشتیبانی زیزی' : '👤 شما'}
+                </p>
+                <p className="whitespace-pre-wrap">{reply.message}</p>
+                <p className={`mt-1 text-left text-[9px] ${reply.isAdminReply ? 'text-white/70' : 'text-ink-light'}`}>
+                  {formatTime(reply.createdAt)}
+                </p>
+              </div>
             </div>
           ))}
-          {/* این دیو برای اینه که اسکرول همیشه بیاد روی آخرین پیام */}
+
           <div ref={messagesEndRef} />
         </div>
 
-        {/* کادر تایپ پیام جدید (اگر بسته نشده باشه) */}
-        {ticket.status !== 'Closed' ? (
-          <div className="p-6 bg-white border-t-2 border-pink-50 flex gap-3 items-end">
-             <textarea 
-               rows={1}
-               value={replyMessage} 
-               onChange={e => setReplyMessage(e.target.value)} 
-               onKeyDown={handleKeyDown}
-               placeholder="پاسخ خود را اینجا بنویسید... (Enter برای ارسال)" 
-               className="flex-1 p-4 rounded-3xl bg-gray-50 border-2 border-pink-50 focus:border-pink-400 outline-none transition-all resize-none min-h-[60px]"
-             />
-             <button 
-               onClick={handleSendReply}
-               disabled={!replyMessage.trim()}
-               className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all text-xl mb-1
-                 ${!replyMessage.trim() ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-pink-500 text-white hover:bg-pink-600 active:scale-90 shadow-pink-200'}`}
-             >
-               🚀
-             </button>
+        {isClosed ? (
+          <div className="border-t border-brand-50 bg-brand-50/40 p-4 text-center text-xs font-bold text-ink-soft">
+            این گفتگو بسته شده است. برای ادامه، تیکت جدیدی ثبت کنید. 🔒
           </div>
         ) : (
-          <div className="p-6 bg-gray-50 border-t-2 border-gray-100 text-center text-gray-500 text-sm font-bold">
-            این گفتگو بسته شده است. 🔒
+          <div className="flex items-end gap-2 border-t border-brand-50 bg-white p-4">
+            <label htmlFor="reply-message" className="sr-only">
+              متن پاسخ
+            </label>
+            <textarea
+              id="reply-message"
+              rows={1}
+              value={replyMessage}
+              onChange={(event) => setReplyMessage(event.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="پاسخ خود را بنویسید… (Enter برای ارسال)"
+              className="field min-h-14 flex-1 resize-none py-3 text-xs"
+              maxLength={1000}
+            />
+            <button
+              type="button"
+              onClick={handleSendReply}
+              disabled={!replyMessage.trim() || sending}
+              aria-label="ارسال پاسخ"
+              className="btn-primary h-14 w-14 shrink-0 rounded-2xl p-0"
+            >
+              <SendHorizontal size={20} aria-hidden="true" />
+            </button>
           </div>
         )}
       </div>

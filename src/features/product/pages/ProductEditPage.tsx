@@ -1,209 +1,333 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-// رفع ارور دوم: Edit اضافه شد
-import { Camera, Check, X, ArrowRight, Tag, Layers, Users, AlignRight, DollarSign, Edit } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { AlignRight, Camera, Check, Layers, Users, X } from 'lucide-react';
 import { useProducts } from '../hooks/useProducts';
+import { useCategories } from '../../../shared/hooks/useCategories';
+import { endpoints } from '../../../shared/config/api-endpoints';
+import { http } from '../../../shared/services/http';
+import { formatNumber } from '../../../shared/utils/format';
+import { PLACEHOLDER_IMAGE, getImageUrl } from '../../../shared/utils/imageUrl';
+
+const GENDERS = [
+  { id: '1', label: 'پسرانه 👦' },
+  { id: '2', label: 'دخترانه 👧' },
+  { id: '3', label: 'هر دو 🌈' },
+];
+
+const MAX_IMAGE_SIZE = 3 * 1024 * 1024;
 
 const ProductEditPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  
-  // خواندن متدهای جدید از هوک
-  const { getProductById } = useProducts();
-  
+  const { getProductById } = useProducts({ autoLoad: false });
+  const { categories } = useCategories();
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [categories, setCategories] = useState<any[]>([]);
-  
+  const [notFound, setNotFound] = useState(false);
+
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [description, setDescription] = useState('');
-  const [gender, setGender] = useState('1'); 
+  const [gender, setGender] = useState('3');
   const [categoryId, setCategoryId] = useState('');
-  
+  const [existingImages, setExistingImages] = useState<string[]>([]);
   const [newImages, setNewImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
-  const [existingImages, setExistingImages] = useState<string[]>([]);
+
+  const previewsRef = useRef<string[]>([]);
+  previewsRef.current = previews;
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const catRes = await fetch('https://localhost:7168/api/Category');
-        const catResult = await catRes.json();
-        const cats = catResult.data || [];
-        setCategories(cats);
-
-        if (id) {
-          const product = await getProductById(Number(id));
-          if (product) {
-            setName(product.name);
-            setPrice(product.price.toString());
-            setDescription(product.description || '');
-            setCategoryId(product.categoryId?.toString() || (cats.length > 0 ? cats[0].id : ''));
-            setGender(product.genderValue?.toString() || '3');
-
-            if (product.imageUrl) {
-               setExistingImages(product.imageUrl.split('|'));
-            }
-          } else {
-            alert('محصول پیدا نشد!');
-            navigate('/products');
-          }
-        }
-      } catch (error) {
-        console.error("خطا در دریافت اطلاعات", error);
-      } finally {
-        setLoading(false);
-      }
+    return () => {
+      previewsRef.current.forEach((url) => URL.revokeObjectURL(url));
     };
-    fetchData();
-  }, [id]);
+  }, []);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const files = Array.from(e.target.files);
-      setNewImages(prev => [...prev, ...files]);
-      const newPreviews = files.map(f => URL.createObjectURL(f));
-      setPreviews(prev => [...prev, ...newPreviews]);
+  useEffect(() => {
+    let active = true;
+
+    const loadProduct = async () => {
+      const productId = Number(id);
+      if (!Number.isFinite(productId)) {
+        setNotFound(true);
+        setLoading(false);
+        return;
+      }
+
+      const product = await getProductById(productId);
+      if (!active) return;
+
+      if (!product) {
+        setNotFound(true);
+        setLoading(false);
+        return;
+      }
+
+      setName(product.name ?? '');
+      setPrice(String(product.price ?? ''));
+      setDescription(product.description ?? '');
+      setGender(String(product.gender ?? 3));
+      setCategoryId(String(product.categoryId ?? ''));
+      setExistingImages((product.imageUrl ?? '').split('|').filter(Boolean));
+      setLoading(false);
+    };
+
+    loadProduct();
+
+    return () => {
+      active = false;
+    };
+  }, [getProductById, id]);
+
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = '';
+    if (files.length === 0) return;
+
+    const accepted: File[] = [];
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) {
+        toast.error(`«${file.name}» تصویر نیست.`);
+        continue;
+      }
+      if (file.size > MAX_IMAGE_SIZE) {
+        toast.error(`حجم «${file.name}» بیش از ۳ مگابایت است.`);
+        continue;
+      }
+      accepted.push(file);
     }
+
+    if (accepted.length === 0) return;
+
+    setNewImages((prev) => [...prev, ...accepted]);
+    setPreviews((prev) => [...prev, ...accepted.map((file) => URL.createObjectURL(file))]);
   };
 
   const removeNewImage = (index: number) => {
-    setNewImages(prev => prev.filter((_, i) => i !== index));
-    setPreviews(prev => prev.filter((_, i) => i !== index));
+    const url = previews[index];
+    if (url) URL.revokeObjectURL(url);
+
+    setNewImages((prev) => prev.filter((_, i) => i !== index));
+    setPreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!price || Number(price) <= 0) {
+      toast.error('قیمت محصول را صحیح وارد کنید.');
+      return;
+    }
+
     setSaving(true);
 
+    const formData = new FormData();
+    formData.append('Id', String(id));
+    formData.append('Name', name.trim());
+    formData.append('Price', String(Number(price)));
+    formData.append('Description', description.trim());
+    formData.append('Gender', gender);
+    formData.append('CategoryId', categoryId);
+    newImages.forEach((file) => formData.append('NewImages', file));
+
     try {
-      const token = localStorage.getItem('token');
-      const formData = new FormData();
-      
-      formData.append('Id', id as string);
-      formData.append('Name', name);
-      formData.append('Price', price);
-      formData.append('Description', description);
-      formData.append('Gender', gender);
-      formData.append('CategoryId', categoryId);
-      formData.append('AgeRange', '0-3');
-
-      newImages.forEach((file) => formData.append('NewImages', file));
-
-      const response = await fetch('https://localhost:7168/api/Product', {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${token}` }, 
-        body: formData 
-      });
-
-      if (response.ok) {
-        alert('تغییرات محصول با موفقیت ذخیره شد! ✏️✨');
-        navigate('/products'); 
-      } else {
-        const err = await response.json();
-        alert(`خطا: ${err.message || 'مشکلی در ثبت تغییرات رخ داد'}`);
-      }
-    } catch {
-      alert('خطای اتصال به سرور!');
+      await http.putForm(endpoints.products.base, formData);
+      toast.success('تغییرات محصول ذخیره شد.');
+      navigate('/products', { replace: true });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'ذخیره‌ی تغییرات انجام نشد.');
     } finally {
       setSaving(false);
     }
   };
 
-  const getFullImageUrl = (path: string) => {
-    if (!path) return 'https://placehold.co/600x600/FFD1DC/white?text=🧸';
-    return path.startsWith('http') ? path : `https://localhost:7168${path}`;
-  };
+  if (loading) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-[#FFFAFB]">
+        <span className="h-10 w-10 animate-spin rounded-full border-4 border-brand-100 border-t-brand-500" />
+      </div>
+    );
+  }
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-blue-500 font-bold text-xl animate-pulse">در حال لود اطلاعات محصول... ⚙️</div>;
+  if (notFound) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-[#FFFAFB] p-4 text-center">
+        <div>
+          <p className="text-4xl" aria-hidden="true">
+            🎈
+          </p>
+          <h1 className="mt-4 text-lg font-black text-ink">محصول پیدا نشد</h1>
+          <Link to="/products" className="btn-primary mt-6 text-sm">
+            بازگشت به لیست محصولات
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-12 text-right font-sans" dir="rtl">
-      <div className="max-w-5xl mx-auto bg-white rounded-[3.5rem] shadow-2xl overflow-hidden border-4 border-white relative">
-        
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-10 text-white flex justify-between items-center shadow-inner">
-          <div>
-            <h1 className="text-3xl font-black mb-2 flex items-center gap-2"><Edit /> ویرایش اطلاعات لباس</h1>
-            <p className="text-blue-100 text-sm font-medium">قیمت یا مشخصات رو تغییر بده.</p>
-          </div>
-          <button onClick={() => navigate('/products')} className="bg-white/20 p-4 rounded-3xl hover:bg-white/30 transition-all shadow-inner">
-            <ArrowRight size={28} />
-          </button>
-        </div>
+    <div className="min-h-screen bg-[#FFFAFB] text-right">
+      <div className="container-shop py-8">
+        <form
+          onSubmit={handleSubmit}
+          className="mx-auto max-w-4xl space-y-6 rounded-[2rem] border border-brand-50 bg-white p-6 shadow-card sm:p-8"
+        >
+          <header className="flex flex-wrap items-center justify-between gap-3 border-b border-brand-50 pb-5">
+            <h1 className="text-lg font-black text-ink">ویرایش محصول</h1>
+            <Link to="/products" className="text-xs font-bold text-brand-500 hover:underline">
+              بازگشت به لیست
+            </Link>
+          </header>
 
-        <form onSubmit={handleSubmit} className="p-10 space-y-8">
-          
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 text-blue-500 mb-2"><Tag size={20} /><span className="font-black text-lg">اطلاعات پایه</span></div>
-            <div className="grid grid-cols-1 gap-6">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-400 mr-2">نام لباس (فارسی)</label>
-                <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full p-5 rounded-[1.5rem] bg-gray-50 outline-none focus:ring-2 focus:ring-blue-300 font-bold transition-all" required />
-              </div>
-            </div>
+          <div>
+            <label htmlFor="edit-name" className="mb-1.5 block text-xs font-bold text-ink-soft">
+              نام محصول
+            </label>
+            <input
+              id="edit-name"
+              type="text"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              className="field"
+              required
+              maxLength={80}
+            />
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="text-xs font-black text-gray-400 mr-2 flex items-center gap-1"><DollarSign size={14}/> قیمت فروش (تومان)</label>
-              <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full p-5 rounded-[1.5rem] bg-blue-50 outline-none focus:ring-2 focus:ring-blue-400 font-black text-blue-700" required />
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label htmlFor="edit-price" className="mb-1.5 block text-xs font-bold text-ink-soft">
+                قیمت (تومان)
+              </label>
+              <input
+                id="edit-price"
+                type="number"
+                inputMode="numeric"
+                min={1000}
+                step={1000}
+                value={price}
+                onChange={(event) => setPrice(event.target.value)}
+                className="field font-mono"
+                dir="ltr"
+                required
+              />
+              {price && <p className="mt-1.5 text-[11px] text-ink-light">{formatNumber(Number(price))} تومان</p>}
             </div>
-            <div className="space-y-2">
-              <label className="text-xs font-black text-gray-400 mr-2 flex items-center gap-1"><Layers size={12}/> دسته بندی</label>
-              <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="w-full p-5 rounded-[1.5rem] bg-gray-50 outline-none focus:ring-2 focus:ring-blue-300 font-bold appearance-none">
-                {categories.map(c => <option key={c.id || c.Id} value={c.id || c.Id}>{c.name || c.Name}</option>)}
+
+            <div>
+              <label htmlFor="edit-category" className="mb-1.5 flex items-center gap-1 text-xs font-bold text-ink-soft">
+                <Layers size={13} aria-hidden="true" /> دسته‌بندی
+              </label>
+              <select
+                id="edit-category"
+                value={categoryId}
+                onChange={(event) => setCategoryId(event.target.value)}
+                className="field appearance-none"
+              >
+                <option value="">انتخاب کنید…</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
 
-          <div className="bg-gray-50/50 p-6 rounded-[2.5rem]">
-            <div className="space-y-3">
-              <label className="text-sm font-black text-gray-600 mr-2 flex items-center gap-1"><Users size={16}/> این لباس برای کیه؟</label>
-              <div className="flex gap-2">
-                {[ {id:'1', l:'پسرانه 👦'}, {id:'2', l:'دخترانه 👧'}, {id:'3', l:'هر دو 🌈'} ].map(g => (
-                  <button key={g.id} type="button" onClick={() => setGender(g.id)} className={`flex-1 py-3 rounded-2xl font-bold text-xs transition-all ${gender === g.id ? 'bg-blue-500 text-white shadow-lg' : 'bg-white text-gray-400 border border-gray-100 hover:border-blue-200'}`}>
-                    {g.l}
-                  </button>
-                ))}
-              </div>
+          <div className="rounded-[1.5rem] bg-brand-50/40 p-5">
+            <p className="mb-2 flex items-center gap-1 text-xs font-black text-ink-soft">
+              <Users size={14} aria-hidden="true" /> این محصول برای چه کسی است؟
+            </p>
+            <div className="flex gap-2">
+              {GENDERS.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => setGender(option.id)}
+                  aria-pressed={gender === option.id}
+                  className={`flex-1 rounded-2xl py-2.5 text-[11px] font-bold transition-all ${
+                    gender === option.id
+                      ? 'bg-brand-500 text-white shadow-md'
+                      : 'border border-brand-100 bg-white text-ink-soft hover:border-brand-300'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-black text-gray-400 mr-2 flex items-center gap-1"><AlignRight size={14}/> توضیحات محصول</label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="w-full p-6 rounded-[2rem] bg-gray-50 outline-none h-32 focus:ring-2 focus:ring-blue-300 font-bold transition-all"></textarea>
+          <div>
+            <label htmlFor="edit-description" className="mb-1.5 flex items-center gap-1 text-xs font-bold text-ink-soft">
+              <AlignRight size={13} aria-hidden="true" /> توضیحات
+            </label>
+            <textarea
+              id="edit-description"
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              className="field min-h-28 leading-7"
+              maxLength={1000}
+            />
           </div>
 
-          <div className="space-y-4">
-            <label className="text-xs font-black text-gray-400 mr-2">📸 عکس‌های محصول</label>
-            <div className="grid grid-cols-4 sm:grid-cols-6 gap-4 border-4 border-dashed border-gray-100 p-6 rounded-[2.5rem] bg-gray-50/30">
-              
-              {existingImages.map((src, i) => (
-                <div key={`old-${i}`} className="relative aspect-square rounded-[1.5rem] overflow-hidden shadow-md">
-                  <img src={getFullImageUrl(src)} className="w-full h-full object-cover opacity-80" alt="Old Image" />
-                  <span className="absolute bottom-1 right-2 text-[8px] bg-black/50 text-white px-2 py-0.5 rounded-full">فعلی</span>
+          <div>
+            <p className="mb-2 text-xs font-bold text-ink-soft">📸 تصاویر محصول</p>
+            <div className="grid grid-cols-3 gap-3 rounded-[1.5rem] border-2 border-dashed border-brand-100 p-4 sm:grid-cols-6">
+              {existingImages.map((src, index) => (
+                <div key={`existing-${index}`} className="relative aspect-square overflow-hidden rounded-2xl">
+                  <img
+                    src={getImageUrl(src)}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    className="h-full w-full object-cover opacity-80"
+                    onError={(event) => {
+                      const image = event.currentTarget;
+                      if (image.dataset.fallbackApplied === 'true') return;
+                      image.dataset.fallbackApplied = 'true';
+                      image.src = PLACEHOLDER_IMAGE;
+                    }}
+                  />
+                  <span className="absolute bottom-1 end-1 rounded-full bg-ink/60 px-2 py-0.5 text-[9px] text-white">
+                    فعلی
+                  </span>
                 </div>
               ))}
 
-              {previews.map((src, i) => (
-                <div key={`new-${i}`} className="relative aspect-square rounded-[1.5rem] overflow-hidden border-2 border-blue-400 shadow-md">
-                  <img src={src} className="w-full h-full object-cover" alt="New Preview" />
-                  <button type="button" onClick={() => removeNewImage(i)} className="absolute top-1 left-1 bg-red-500 text-white rounded-full p-1 shadow-lg hover:scale-110 transition-transform"><X size={14}/></button>
+              {previews.map((src, index) => (
+                <div key={src} className="relative aspect-square overflow-hidden rounded-2xl border-2 border-brand-300">
+                  <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" />
+                  <button
+                    type="button"
+                    onClick={() => removeNewImage(index)}
+                    aria-label="حذف تصویر"
+                    className="absolute end-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-red-500 text-white shadow"
+                  >
+                    <X size={12} aria-hidden="true" />
+                  </button>
                 </div>
               ))}
-              
-              <label className="aspect-square rounded-[1.5rem] bg-white border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all text-blue-400">
-                <Camera size={32} />
-                <span className="text-[9px] font-black mt-2">افزودن عکس</span>
-                <input type="file" multiple onChange={handleImageChange} className="hidden" accept="image/*" />
+
+              <label className="grid aspect-square cursor-pointer place-items-center rounded-2xl border-2 border-dashed border-brand-200 bg-white text-brand-400 transition-colors hover:border-brand-400 hover:bg-brand-50">
+                <span className="text-center">
+                  <Camera className="mx-auto" size={24} aria-hidden="true" />
+                  <span className="mt-1 block text-[10px] font-black">افزودن</span>
+                </span>
+                <input type="file" multiple accept="image/*" onChange={handleImageChange} className="hidden" />
               </label>
             </div>
           </div>
 
-          <button type="submit" disabled={saving} className={`w-full py-6 rounded-[2.5rem] font-black text-xl shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3 ${saving ? 'bg-gray-300 text-gray-500' : 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:shadow-blue-200 hover:-translate-y-1'}`}>
-            {saving ? 'در حال آپدیت...' : <><Check size={28} /> ذخیره تغییرات لباس</>}
+          <button type="submit" disabled={saving} className="btn-primary w-full py-4 text-sm">
+            {saving ? (
+              'در حال ذخیره…'
+            ) : (
+              <>
+                <Check size={18} aria-hidden="true" /> ذخیره تغییرات
+              </>
+            )}
           </button>
         </form>
       </div>

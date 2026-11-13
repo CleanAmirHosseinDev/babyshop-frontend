@@ -1,148 +1,182 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useProducts } from '../hooks/useProducts'; // هوک محصولات
-import { Search, Plus, Edit, Trash2, Tag, AlertCircle, ShoppingBag } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { AlertCircle, Pencil, Plus, Search, ShoppingBag, Tag, Trash2 } from 'lucide-react';
+import { useProducts } from '../hooks/useProducts';
+import { formatNumber } from '../../../shared/utils/format';
+import { PLACEHOLDER_IMAGE, getFirstImageUrl } from '../../../shared/utils/imageUrl';
 
 const ProductListPage: React.FC = () => {
   const navigate = useNavigate();
-  const { products, deleteProduct, loading } = useProducts();
+  const { products, deleteProduct, loading, error, refresh } = useProducts();
   const [searchTerm, setSearchTerm] = useState('');
 
-  // فیلتر کردن محصولات برای جستجو
   const filteredProducts = useMemo(() => {
-    if (!products) return [];
-    return products.filter((p: any) => 
-      p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.slug?.toLowerCase().includes(searchTerm.toLowerCase())
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return products;
+
+    return products.filter(
+      (product) =>
+        product.name?.toLowerCase().includes(term) || product.slug?.toLowerCase().includes(term),
     );
   }, [products, searchTerm]);
 
-  // متد کمکی برای استخراج اولین عکس از گالری
-  const getImageUrl = (path?: string) => {
-    if (!path) return 'https://placehold.co/100x100/FFD1DC/white?text=👗';
-    const firstPath = path.split('|')[0];
-    return firstPath.startsWith('http') ? firstPath : `https://localhost:7168${firstPath}`;
-  };
-
   const handleDelete = async (id: number, name: string) => {
-    if (window.confirm(`آیا از حذفِ محصول "${name}" کاملاً مطمئنی؟ 🗑️`)) {
-      const result = await deleteProduct(id);
-      if (result.success) {
-        alert("محصول با موفقیت حذف شد.");
-        // نیاز به ریلود یا استیت-آپدیت داره که تو هوک useProducts هندل میشه
-        window.location.reload(); 
-      } else {
-        alert("خطا در حذف محصول!");
-      }
+    if (!window.confirm(`محصول «${name}» حذف شود؟`)) return;
+
+    const result = await deleteProduct(id);
+    if (result.success) {
+      toast.success('محصول حذف شد.');
+    } else {
+      toast.error(result.message ?? 'حذف محصول انجام نشد.');
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#FFF9F9] p-4 md:p-8 text-right font-sans" dir="rtl">
-      <div className="max-w-6xl mx-auto">
-        
-        {/* Header */}
-        <header className="flex flex-col md:flex-row justify-between items-center mb-10 bg-white p-6 rounded-[2.5rem] shadow-sm border-b-4 border-pink-400 gap-4">
-          <div className="flex items-center gap-3">
-            <ShoppingBag className="text-pink-500" size={32} />
-            <div>
-              <h1 className="text-2xl font-black text-gray-800">لیست ویترین (محصولات)</h1>
-              <p className="text-gray-400 text-xs font-bold mt-1">مدیریت قیمت‌ها، موجودی و ویرایش لباس‌ها</p>
-            </div>
-          </div>
+    <div className="min-h-screen bg-[#FFFAFB] text-right">
+      <div className="container-shop py-8">
+        <header className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-[2rem] border border-brand-50 bg-white p-6 shadow-card">
+          <h1 className="flex items-center gap-2 text-lg font-black text-ink">
+            <ShoppingBag className="text-lavender-500" size={22} aria-hidden="true" /> لیست محصولات
+          </h1>
 
-          <div className="flex items-center gap-3 w-full md:w-auto">
-            <Link to="/dashboard" className="text-pink-500 font-bold hover:bg-pink-50 px-4 py-2 rounded-xl transition-all ml-4">
-              ← پنل کاربری
+          <div className="flex flex-wrap items-center gap-2">
+            <Link to="/products/create" className="btn-primary px-4 py-2 text-xs">
+              <Plus size={14} aria-hidden="true" /> محصول جدید
             </Link>
-            <button 
-              onClick={() => navigate('/products/create')} 
-              className="bg-pink-500 text-white px-5 py-3 rounded-2xl text-sm font-bold shadow-lg hover:bg-pink-600 transition-all flex items-center gap-2 flex-1 md:flex-none justify-center"
+            <Link
+              to="/dashboard"
+              className="rounded-xl px-3 py-2 text-xs font-bold text-ink-soft transition-colors hover:bg-brand-50"
             >
-              <Plus size={18} /> لباس جدید
-            </button>
+              ← حساب کاربری
+            </Link>
           </div>
         </header>
 
-        {/* Search Bar */}
-        <div className="bg-white p-4 rounded-[2rem] shadow-md mb-8 border-2 border-white focus-within:border-pink-200 transition-all relative">
-          <input 
-            type="text" 
-            placeholder="جستجوی نام یا شناسه انگلیسی (Slug) محصول..." 
-            className="w-full pl-12 pr-4 py-2 outline-none font-bold text-gray-700 bg-transparent"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+        <div className="relative mb-5">
+          <label htmlFor="admin-product-search" className="sr-only">
+            جستجوی محصول
+          </label>
+          <Search
+            size={18}
+            aria-hidden="true"
+            className="pointer-events-none absolute start-5 top-1/2 -translate-y-1/2 text-ink-light"
           />
-          <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+          <input
+            id="admin-product-search"
+            type="search"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="جستجوی نام یا اسلاگ محصول…"
+            className="field ps-14 text-sm"
+          />
         </div>
 
-        {/* Product Table */}
-        <div className="bg-white rounded-[3rem] shadow-xl overflow-hidden border-4 border-white">
-          <table className="w-full text-right border-collapse">
-            <thead>
-              <tr className="bg-pink-50/50 text-pink-800 text-sm border-b-2 border-pink-100">
-                <th className="p-6 font-black w-16 text-center">عکس</th>
-                <th className="p-6 font-black">نام محصول</th>
-                <th className="p-6 font-black">دسته‌بندی</th>
-                <th className="p-6 font-black text-center">قیمت فروش</th>
-                <th className="p-6 font-black text-center">عملیات</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {loading ? (
-                <tr><td colSpan={5} className="p-10 text-center text-pink-500 font-bold animate-pulse">در حال خواندن قفسه‌ها... 👗</td></tr>
-              ) : filteredProducts.length === 0 ? (
-                <tr><td colSpan={5} className="p-20 text-center text-gray-400 font-medium italic"><AlertCircle className="mx-auto mb-2 opacity-50" size={32}/> هیچ محصولی پیدا نشد!</td></tr>
-              ) : (
-                filteredProducts.map((product: any) => (
-                  <tr key={product.id} className="hover:bg-pink-50/30 transition-all group">
+        <div className="overflow-hidden rounded-[2rem] border border-brand-50 bg-white shadow-card">
+          <div className="overflow-x-auto">
+            <table className="w-full text-right">
+              <thead>
+                <tr className="border-b border-brand-50 bg-brand-50/50 text-[11px] font-black text-ink-soft">
+                  <th className="p-4 text-center">تصویر</th>
+                  <th className="p-4">نام محصول</th>
+                  <th className="p-4">دسته‌بندی</th>
+                  <th className="p-4 text-center">قیمت</th>
+                  <th className="p-4 text-center">عملیات</th>
+                </tr>
+              </thead>
+
+              <tbody className="divide-y divide-brand-50">
+                {loading && (
+                  <tr>
+                    <td colSpan={5} className="p-10 text-center text-xs text-ink-light">
+                      در حال بارگذاری…
+                    </td>
+                  </tr>
+                )}
+
+                {!loading && error && (
+                  <tr>
+                    <td colSpan={5} className="p-10 text-center text-xs text-red-500">
+                      {error}
+                      <button type="button" onClick={refresh} className="ms-2 font-bold underline">
+                        تلاش دوباره
+                      </button>
+                    </td>
+                  </tr>
+                )}
+
+                {!loading && !error && filteredProducts.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="p-10 text-center text-xs text-ink-light">
+                      <AlertCircle className="mx-auto mb-2 text-amber-400" size={24} aria-hidden="true" />
+                      محصولی یافت نشد.
+                    </td>
+                  </tr>
+                )}
+
+                {filteredProducts.map((product) => (
+                  <tr key={product.id} className="text-xs transition-colors hover:bg-brand-50/30">
+                    <td className="p-3">
+                      <img
+                        src={getFirstImageUrl(product.imageUrl)}
+                        alt={product.name}
+                        width={56}
+                        height={56}
+                        loading="lazy"
+                        decoding="async"
+                        className="mx-auto h-14 w-14 rounded-xl border border-brand-50 object-cover"
+                        onError={(event) => {
+                          const image = event.currentTarget;
+                          if (image.dataset.fallbackApplied === 'true') return;
+                          image.dataset.fallbackApplied = 'true';
+                          image.src = PLACEHOLDER_IMAGE;
+                        }}
+                      />
+                    </td>
+
                     <td className="p-4">
-                      <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-pink-50 shadow-sm mx-auto bg-gray-50">
-                        <img src={getImageUrl(product.imageUrl)} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
-                      </div>
+                      <p className="font-bold text-ink">{product.name}</p>
+                      {product.slug && (
+                        <p className="mt-1 w-max rounded bg-brand-50 px-2 py-0.5 font-mono text-[10px] text-ink-light" dir="ltr">
+                          {product.slug}
+                        </p>
+                      )}
                     </td>
-                    <td className="p-6">
-                      <div className="font-black text-gray-800 text-base">{product.name}</div>
-                      <div className="text-gray-400 text-[10px] font-mono mt-1 bg-gray-100 px-2 py-0.5 rounded w-max">
-                        {product.slug}
-                      </div>
-                    </td>
-                    <td className="p-6">
-                      <span className="flex items-center gap-1 text-xs font-bold text-gray-500 bg-gray-50 px-3 py-1 rounded-full w-max">
-                        <Tag size={12}/> {product.categoryName || 'دسته‌بندی نشده'}
+
+                    <td className="p-4">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-3 py-1 text-[10px] font-bold text-brand-600">
+                        <Tag size={12} aria-hidden="true" /> {product.categoryName || 'بدون دسته'}
                       </span>
                     </td>
-                    <td className="p-6 text-center font-black text-pink-600 text-lg">
-                      {product.price?.toLocaleString()} <span className="text-[10px] font-normal text-pink-400">تومان</span>
-                    </td>
-                    <td className="p-6 text-center">
-                      <div className="flex justify-center gap-2">
-                        {/* دکمه ویرایش (وصل می‌شود به صفحه‌ی ProductEditPage) */}
-                        <button 
+
+                    <td className="p-4 text-center font-black text-brand-600">{formatNumber(product.price)}</td>
+
+                    <td className="p-4">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          type="button"
                           onClick={() => navigate(`/products/edit/${product.id}`)}
-                          className="bg-blue-50 text-blue-500 p-3 rounded-xl hover:bg-blue-500 hover:text-white transition-all shadow-sm"
-                          title="ویرایش محصول"
+                          aria-label={`ویرایش ${product.name}`}
+                          className="grid h-8 w-8 place-items-center rounded-lg bg-lavender-50 text-lavender-500 transition-colors hover:bg-lavender-500 hover:text-white"
                         >
-                          <Edit size={18} />
+                          <Pencil size={15} aria-hidden="true" />
                         </button>
-                        
-                        {/* دکمه حذف */}
-                        <button 
+                        <button
+                          type="button"
                           onClick={() => handleDelete(product.id, product.name)}
-                          className="bg-red-50 text-red-500 p-3 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm"
-                          title="حذف محصول"
+                          aria-label={`حذف ${product.name}`}
+                          className="grid h-8 w-8 place-items-center rounded-lg bg-red-50 text-red-500 transition-colors hover:bg-red-500 hover:text-white"
                         >
-                          <Trash2 size={18} />
+                          <Trash2 size={15} aria-hidden="true" />
                         </button>
                       </div>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-
       </div>
     </div>
   );

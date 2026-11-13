@@ -1,92 +1,97 @@
-import { useState } from 'react';
-import { environment } from '../config/environment';
+import { useCallback, useState } from 'react';
+import { endpoints } from '../config/api-endpoints';
+import { http } from '../services/http';
+import type { Ticket } from '../types/models';
+
+export interface CreateTicketPayload {
+  Subject: string;
+  Message: string;
+  Category?: string;
+  OrderId?: number | null;
+  ProductId?: number | null;
+}
 
 export const useTickets = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const getToken = () => localStorage.getItem('token');
-
-  // ۱. لیست تیکت‌های کاربر لاگین شده
-  const getMyTickets = async () => {
+  /** تیکت‌های کاربر جاری */
+  const getMyTickets = useCallback(async (): Promise<Ticket[]> => {
     setLoading(true);
     try {
-      const response = await fetch(`${environment.apiUrl}/Ticket`, {
-        headers: { 'Authorization': `Bearer ${getToken()}` }
-      });
-      const result = await response.json();
-      return result.success ? result.data : [];
-    } catch (err) { return []; }
-    finally { setLoading(false); }
-  };
+      const data = await http.get<Ticket[]>(endpoints.tickets.base);
+      return Array.isArray(data) ? data : [];
+    } catch {
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  // ۲. لیست تمام تیکت‌ها مخصوص ادمین (آدرس اصلاح شد!)
-  const getAllTicketsAdmin = async () => {
+  /** تمام تیکت‌ها (ادمین) */
+  const getAllTicketsAdmin = useCallback(async (): Promise<Ticket[]> => {
     setLoading(true);
     try {
-      const response = await fetch(`${environment.apiUrl}/admin/AdminTicket`, { 
-        method: 'GET',
-        headers: { 'Authorization': `Bearer ${getToken()}` }
-      });
-      const result = await response.json();
-      return result.success ? result.data : [];
-    } catch (err) { return []; }
-    finally { setLoading(false); }
-  };
+      const data = await http.get<Ticket[]>(endpoints.tickets.adminAll);
+      return Array.isArray(data) ? data : [];
+    } catch {
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  // ۳. ثبت تیکت جدید
-  const createTicket = async (ticketData: any) => {
+  /** ثبت تیکت جدید */
+  const createTicket = useCallback(
+    async (payload: CreateTicketPayload): Promise<{ success: boolean; message?: string }> => {
+      setLoading(true);
+      setError(null);
+      try {
+        await http.post(endpoints.tickets.base, payload);
+        return { success: true };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'خطا در ثبت تیکت';
+        setError(message);
+        return { success: false, message };
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
+
+  /** ارسال پاسخ در تیکت */
+  const sendReply = useCallback(
+    async (ticketId: number, message: string): Promise<{ success: boolean; message?: string }> => {
+      try {
+        await http.post(endpoints.tickets.reply, { TicketId: ticketId, Message: message });
+        return { success: true };
+      } catch (err) {
+        return { success: false, message: err instanceof Error ? err.message : 'خطا در ارسال پاسخ' };
+      }
+    },
+    [],
+  );
+
+  /** جزئیات یک تیکت */
+  const getTicketDetails = useCallback(async (id: number): Promise<Ticket | null> => {
     setLoading(true);
     try {
-      const response = await fetch(`${environment.apiUrl}/Ticket`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${getToken()}` 
-        },
-        body: JSON.stringify(ticketData),
-      });
-      const result = await response.json();
-      return result;
-    } catch (err) { return { success: false }; }
-    finally { setLoading(false); }
-  };
+      return await http.get<Ticket>(endpoints.tickets.byId(id));
+    } catch {
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  // ۴. ارسال پاسخ (Reply)
-  const sendReply = async (ticketId: number, message: string) => {
-    try {
-      const response = await fetch(`${environment.apiUrl}/Ticket/reply`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${getToken()}` 
-        },
-        body: JSON.stringify({ TicketId: ticketId, Message: message }),
-      });
-      return await response.json();
-    } catch (err) { return { success: false }; }
-  };
-
-  // ۵. جزئیات یک تیکت خاص
-  const getTicketDetails = async (id: number) => {
-    setLoading(true);
-    try {
-      const response = await fetch(`${environment.apiUrl}/Ticket/${id}`, {
-        headers: { 'Authorization': `Bearer ${getToken()}` }
-      });
-      const result = await response.json();
-      return result.success ? result.data : null;
-    } catch (err) { return null; }
-    finally { setLoading(false); }
-  };
-
-  return { 
-    getMyTickets, 
-    getAllTicketsAdmin, 
-    createTicket, 
-    sendReply, 
-    getTicketDetails, 
-    loading, 
-    error 
+  return {
+    getMyTickets,
+    getAllTicketsAdmin,
+    createTicket,
+    sendReply,
+    getTicketDetails,
+    loading,
+    error,
   };
 };

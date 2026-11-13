@@ -1,260 +1,373 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { LogOut, MessageSquarePlus, Package, Ticket } from 'lucide-react';
+import StoreHeader from '../../../shared/components/StoreHeader';
+import StoreFooter from '../../../shared/components/StoreFooter';
 import { useAuth } from '../../../shared/hooks/useAuth';
 import { useWishlist } from '../../../shared/context/WishlistContext';
 import { useOrders } from '../../order/hooks/useOrders';
-import { useTickets } from '../../../shared/hooks/useTickets'; 
-import { useNavigate, Link } from 'react-router-dom';
+import { useTickets } from '../../../shared/hooks/useTickets';
+import { formatDate, formatNumber } from '../../../shared/utils/format';
+import { PLACEHOLDER_IMAGE, getFirstImageUrl } from '../../../shared/utils/imageUrl';
+import type { Order, Ticket as TicketModel } from '../../../shared/types/models';
+
+type Tab = 'orders' | 'wishlist' | 'tickets';
+
+const TABS: Array<{ id: Tab; label: string; icon: string }> = [
+  { id: 'orders', label: 'سفارش‌های من', icon: '📦' },
+  { id: 'wishlist', label: 'علاقه‌مندی‌ها', icon: '💖' },
+  { id: 'tickets', label: 'پشتیبانی', icon: '✉️' },
+];
+
+const ORDER_STATUS_LABELS: Record<string, string> = {
+  pending: 'در انتظار پرداخت',
+  paid: 'پرداخت شده',
+  shipped: 'ارسال شده',
+  delivered: 'تحویل داده شده',
+  cancelled: 'لغو شده',
+};
+
+const TICKET_STATUS_LABELS: Record<string, string> = {
+  open: 'در انتظار پاسخ',
+  inprogress: 'پاسخ داده شده',
+  resolved: 'بسته شده',
+  closed: 'بسته شده',
+};
 
 const DashboardPage: React.FC = () => {
-  const { logout, isAdmin, user } = useAuth(); // دریافت اطلاعات واقعی کاربر و نقش ادمین
+  const { logout, isAdmin, user } = useAuth();
   const { wishlist } = useWishlist();
   const { getMyOrders } = useOrders();
   const { getMyTickets, getAllTicketsAdmin } = useTickets();
   const navigate = useNavigate();
-  
-  const [activeTab, setActiveTab] = useState('orders');
-  const [orders, setOrders] = useState<any[]>([]);
-  const [tickets, setTickets] = useState<any[]>([]);
-  const [adminTickets, setAdminTickets] = useState<any[]>([]); // برای نوتیفیکیشن ادمین
-  const [isLoading, setIsLoading] = useState(false);
 
-  // لود کردن اطلاعات بر اساس تب فعال
+  const [activeTab, setActiveTab] = useState<Tab>('orders');
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [tickets, setTickets] = useState<TicketModel[]>([]);
+  const [adminTickets, setAdminTickets] = useState<TicketModel[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadTickets = useCallback(async () => {
+    const data = await getMyTickets();
+    setTickets(data);
+  }, [getMyTickets]);
+
   useEffect(() => {
+    let active = true;
+
     const loadData = async () => {
       setIsLoading(true);
       try {
         if (activeTab === 'orders') {
           const data = await getMyOrders();
-          setOrders(data || []);
+          if (active) setOrders(data);
         } else if (activeTab === 'tickets') {
-          const data = await getMyTickets();
-          setTickets(data || []);
+          await loadTickets();
         }
-      } catch (err) {
-        console.error("خطا در بارگذاری دیتای داشبورد", err);
       } finally {
-        setIsLoading(false);
+        if (active) setIsLoading(false);
       }
     };
+
     loadData();
-  }, [activeTab]);
 
-  // لود کردن پیام‌های باز برای نوتیفیکیشن منوی ادمین
+    return () => {
+      active = false;
+    };
+  }, [activeTab, getMyOrders, loadTickets]);
+
+  // بارگذاری تیکت‌ها و اعلان‌های ادمین در اولین ورود (برای شمارنده‌ی منو)
   useEffect(() => {
-    if (isAdmin) {
-      const fetchAdminNotifs = async () => {
+    let active = true;
+
+    const loadNotifications = async () => {
+      if (isAdmin) {
         const data = await getAllTicketsAdmin();
-        setAdminTickets(data || []);
-      };
-      fetchAdminNotifs();
-    }
-  }, [isAdmin]);
+        if (active) setAdminTickets(data);
+      } else {
+        const data = await getMyTickets();
+        if (active) setTickets(data);
+      }
+    };
 
-  // ترجمه وضعیت تیکت به فارسی برای مشتری
-  const translateTicketStatus = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'open': return 'در انتظار پاسخ ⏳';
-      case 'inprogress': return 'پاسخ داده شده 💬';
-      case 'resolved':
-      case 'closed': return 'بسته شده 🔒';
-      default: return status;
-    }
+    loadNotifications();
+
+    return () => {
+      active = false;
+    };
+  }, [getAllTicketsAdmin, getMyTickets, isAdmin]);
+
+  const openAdminTickets = adminTickets.filter((ticket) => ticket.status?.toLowerCase() === 'open').length;
+  const answeredTickets = tickets.filter((ticket) => ticket.status?.toLowerCase() === 'inprogress').length;
+
+  const handleLogout = () => {
+    logout();
+    navigate('/', { replace: true });
   };
-
-  // رنگ‌بندی وضعیت تیکت برای مشتری
-  const getTicketStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'open': return 'bg-orange-100 text-orange-600'; // کاربر پیام داده، منتظر جوابه
-      case 'inprogress': return 'bg-green-100 text-green-600'; // ادمین جواب داده
-      case 'resolved':
-      case 'closed': return 'bg-gray-100 text-gray-500';
-      default: return 'bg-blue-100 text-blue-600';
-    }
-  };
-
-  // محاسبه تعداد پیام‌های جدید (Open) برای نوتیفیکیشن ادمین
-  const unreadAdminTicketsCount = adminTickets.filter(t => t.status === 'Open').length;
-  
-  // محاسبه پیام‌های پاسخ داده شده (InProgress) برای نوتیفیکیشن مشتری
-  const unreadUserTicketsCount = tickets.filter(t => t.status === 'InProgress').length;
 
   return (
-    <div className="min-h-screen bg-[#FFF9F9] font-sans p-4 md:p-8 text-right" dir="rtl">
-      <div className="max-w-7xl mx-auto">
-        
-        {/* هدر بالایی پنل */}
-        <header className="flex justify-between items-center mb-10 bg-white p-6 rounded-[2.5rem] shadow-sm border-b-4 border-pink-100">
-           <Link to="/" className="text-pink-500 font-bold hover:scale-105 transition-all flex items-center gap-2">
-             <span>←</span> بازگشت به فروشگاه
-           </Link>
-           <h1 className="text-2xl md:text-3xl font-black text-gray-800 flex items-center gap-3">
-             حساب کاربری من <span className="text-4xl">🧸</span>
-           </h1>
-        </header>
+    <div className="min-h-screen bg-[#FFFAFB] text-right">
+      <StoreHeader backTo="/" backLabel="فروشگاه" />
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          
-          {/* ستون منوی سمت راست (Sidebar) */}
-          <div className="md:col-span-1 space-y-4">
-            <div className="bg-white p-6 rounded-[3rem] shadow-md border-2 border-pink-50 text-center relative overflow-hidden group">
-               <div className="w-20 h-20 bg-pink-100 rounded-full flex items-center justify-center text-4xl mx-auto mb-4 border-4 border-white shadow-lg animate-bounce">👤</div>
-               {/* نمایش اطلاعات واقعی استخراج شده از توکن */}
-               <h3 className="font-black text-gray-700">{user?.fullName || "کاربر عزیز زی‌زی"}</h3>
-               <p className="text-gray-400 text-xs mt-2 font-bold" dir="ltr">{user?.phoneNumber}</p>
-               {isAdmin && <span className="inline-block mt-2 bg-blue-100 text-blue-600 text-[9px] px-2 py-0.5 rounded-full font-black uppercase shadow-sm">مدیر سیستم 🛡️</span>}
-               <div className="absolute top-0 right-0 w-16 h-16 bg-pink-500/5 rounded-full -mr-8 -mt-8"></div>
+      <main className="container-shop py-8">
+        <h1 className="mb-6 text-xl font-black text-ink md:text-2xl">حساب کاربری من</h1>
+
+        <div className="grid gap-6 md:grid-cols-4">
+          {/* منوی کنار */}
+          <aside className="space-y-4 md:col-span-1">
+            <div className="rounded-[2rem] border border-brand-50 bg-white p-6 text-center shadow-card">
+              <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-brand-50 text-3xl" aria-hidden="true">
+                👤
+              </span>
+              <p className="mt-3 text-sm font-black text-ink">{user?.fullName || 'کاربر عزیز زیزی'}</p>
+              {user?.phoneNumber && (
+                <p className="mt-1 font-mono text-xs text-ink-light" dir="ltr">
+                  {user.phoneNumber}
+                </p>
+              )}
+              {isAdmin && (
+                <span className="mt-3 inline-block rounded-full bg-lavender-100 px-3 py-1 text-[10px] font-black text-lavender-500">
+                  مدیر سیستم 🛡️
+                </span>
+              )}
             </div>
 
-            <nav className="bg-white rounded-[3rem] shadow-md overflow-hidden p-2 border-2 border-pink-50">
-              <button 
-                onClick={() => setActiveTab('orders')}
-                className={`w-full p-5 text-right rounded-3xl mb-2 transition-all flex items-center justify-between ${activeTab === 'orders' ? 'bg-pink-500 text-white font-black shadow-lg shadow-pink-200' : 'text-gray-500 hover:bg-pink-50'}`}
-              >
-                <span>📦 سفارش‌های من</span>
-                {activeTab === 'orders' && <span className="text-xs">●</span>}
-              </button>
-              
-              <button 
-                onClick={() => setActiveTab('wishlist')}
-                className={`w-full p-5 text-right rounded-3xl mb-2 transition-all flex items-center justify-between ${activeTab === 'wishlist' ? 'bg-pink-500 text-white font-black shadow-lg shadow-pink-200' : 'text-gray-500 hover:bg-pink-50'}`}
-              >
-                <span>💖 علاقه‌مندی‌ها</span>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${activeTab === 'wishlist' ? 'bg-white text-pink-500' : 'bg-pink-50 text-pink-400'}`}>
-                   {wishlist.length}
-                </span>
-              </button>
+            <nav className="rounded-[2rem] border border-brand-50 bg-white p-2 shadow-card" aria-label="منوی حساب کاربری">
+              {TABS.map((tab) => {
+                const badgeCount =
+                  tab.id === 'wishlist' ? wishlist.length : tab.id === 'tickets' && !isAdmin ? answeredTickets : 0;
 
-              <button 
-                onClick={() => setActiveTab('tickets')}
-                className={`w-full p-5 text-right rounded-3xl mb-2 transition-all flex items-center justify-between ${activeTab === 'tickets' ? 'bg-pink-500 text-white font-black shadow-lg shadow-pink-200' : 'text-gray-500 hover:bg-pink-50'}`}
-              >
-                <div className="flex items-center gap-2">
-                  <span>✉️ پشتیبانی زی‌زی</span>
-                  {/* نوتیفیکیشن پیام پاسخ داده شده برای مشتری */}
-                  {!isAdmin && unreadUserTicketsCount > 0 && (
-                    <span className="bg-red-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full animate-bounce shadow-md">
-                      {unreadUserTicketsCount}
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveTab(tab.id)}
+                    aria-current={activeTab === tab.id}
+                    className={`mb-1 flex w-full items-center justify-between rounded-2xl px-4 py-3.5 text-xs font-bold transition-all ${
+                      activeTab === tab.id
+                        ? 'bg-brand-500 text-white shadow-lg shadow-brand-200'
+                        : 'text-ink-soft hover:bg-brand-50'
+                    }`}
+                  >
+                    <span>
+                      {tab.icon} {tab.label}
                     </span>
-                  )}
-                </div>
-                {activeTab === 'tickets' && <span className="text-xs">●</span>}
-              </button>
+                    {badgeCount > 0 && (
+                      <span
+                        className={`grid h-5 min-w-5 place-items-center rounded-full px-1 text-[10px] ${
+                          activeTab === tab.id ? 'bg-white text-brand-600' : 'bg-brand-50 text-brand-500'
+                        }`}
+                      >
+                        {formatNumber(badgeCount)}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
 
-              {/* پنل ادمین - فقط برای مدیر نمایش داده می‌شود 🔒 */}
               {isAdmin && (
-                <div className="mt-4 pt-4 border-t-2 border-gray-50 space-y-2">
-                   <p className="text-[10px] text-gray-300 pr-5 font-bold mb-1">بخش مدیریت سیستم</p>
-                   <button onClick={() => navigate('/admin/orders')} className="w-full p-5 text-right rounded-3xl text-blue-600 hover:bg-blue-50 font-black transition-all flex items-center gap-2">🛒 مدیریت سفارشات</button>
-                   
-                   <button onClick={() => navigate('/admin/tickets')} className="w-full p-5 text-right rounded-3xl text-blue-600 hover:bg-blue-50 font-black transition-all flex items-center justify-between">
-                     <div className="flex items-center gap-2">🎧 مدیریت پیام‌ها</div>
-                     {/* نوتیفیکیشن پیام جدید برای ادمین */}
-                     {unreadAdminTicketsCount > 0 && (
-                       <span className="bg-red-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full animate-pulse shadow-md">
-                         {unreadAdminTicketsCount}
-                       </span>
-                     )}
-                   </button>
-                   
-                   <button onClick={() => navigate('/admin/inventory')} className="w-full p-5 text-right rounded-3xl text-blue-600 hover:bg-blue-50 font-black transition-all flex items-center gap-2">📦 موجودی انبار</button>
-                   <button onClick={() => navigate('/admin/categories')} className="w-full p-5 text-right rounded-3xl text-blue-600 hover:bg-blue-50 font-black transition-all flex items-center gap-2">🏷️ مدیریت دسته‌بندی‌ها</button>
-                   <button onClick={() => navigate('/products')} className="w-full p-5 text-right rounded-3xl text-blue-600 hover:bg-blue-50 font-black transition-all flex items-center gap-2">🛍️ لیست ویترین</button>
+                <div className="mt-3 space-y-1 border-t border-brand-50 pt-3">
+                  <p className="px-4 pb-1 text-[10px] font-bold text-ink-light">مدیریت فروشگاه</p>
+
+                  <Link
+                    to="/admin/orders"
+                    className="block rounded-2xl px-4 py-3 text-xs font-bold text-lavender-500 transition-colors hover:bg-lavender-50"
+                  >
+                    🛒 سفارش‌ها
+                  </Link>
+
+                  <Link
+                    to="/admin/tickets"
+                    className="flex items-center justify-between rounded-2xl px-4 py-3 text-xs font-bold text-lavender-500 transition-colors hover:bg-lavender-50"
+                  >
+                    🎧 پیام‌های مشتریان
+                    {openAdminTickets > 0 && (
+                      <span className="grid h-5 min-w-5 place-items-center rounded-full bg-red-500 px-1 text-[10px] text-white">
+                        {formatNumber(openAdminTickets)}
+                      </span>
+                    )}
+                  </Link>
+
+                  <Link
+                    to="/admin/inventory"
+                    className="block rounded-2xl px-4 py-3 text-xs font-bold text-lavender-500 transition-colors hover:bg-lavender-50"
+                  >
+                    📦 موجودی انبار
+                  </Link>
+                  <Link
+                    to="/admin/categories"
+                    className="block rounded-2xl px-4 py-3 text-xs font-bold text-lavender-500 transition-colors hover:bg-lavender-50"
+                  >
+                    🏷️ دسته‌بندی‌ها
+                  </Link>
+                  <Link
+                    to="/products"
+                    className="block rounded-2xl px-4 py-3 text-xs font-bold text-lavender-500 transition-colors hover:bg-lavender-50"
+                  >
+                    🛍️ لیست محصولات
+                  </Link>
                 </div>
               )}
 
-              <button onClick={logout} className="w-full p-5 text-right text-red-500 font-bold hover:bg-red-50 rounded-3xl mt-4 transition-all flex items-center gap-2">
-                 🚪 خروج از حساب
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="mt-3 flex w-full items-center gap-2 rounded-2xl px-4 py-3.5 text-xs font-bold text-red-500 transition-colors hover:bg-red-50"
+              >
+                <LogOut size={16} aria-hidden="true" /> خروج از حساب
               </button>
             </nav>
-          </div>
+          </aside>
 
-          {/* ستون محتوای اصلی */}
-          <div className="md:col-span-3">
-            <div className="bg-white p-10 rounded-[4rem] shadow-xl border-4 border-pink-100 min-h-[600px]">
-               
-               {activeTab === 'orders' && (
-                 <>
-                   <h2 className="text-2xl font-black text-gray-800 mb-8 border-r-8 border-pink-500 pr-4">لیست سفارشات اخیر</h2>
-                   {isLoading ? (
-                     <div className="text-center py-20 text-pink-400 font-bold animate-pulse text-xl">در حال خواندن اطلاعات... 🍭</div>
-                   ) : orders.length === 0 ? (
-                     <div className="text-center py-24 text-gray-400 italic bg-pink-50/20 rounded-[3rem] border-2 border-dashed border-pink-100">هنوز هیچ سفارشی ثبت نکردی! 🎈</div>
-                   ) : (
-                     <div className="grid gap-4">
-                        {orders.map((order: any) => (
-                          <div key={order.id} onClick={() => navigate(`/dashboard/order/${order.id}`)} className="bg-white p-6 rounded-[2.5rem] border-2 border-pink-50 flex justify-between items-center hover:border-pink-300 hover:shadow-lg cursor-pointer transition-all group">
-                             <div>
-                               <div className="font-black text-gray-700 text-lg group-hover:text-pink-500">سفارش #{order.orderNumber}</div>
-                               <div className="text-gray-400 text-[10px] mt-1 italic">تاریخ ثبت: {new Date(order.createdAt).toLocaleDateString('fa-IR')}</div>
-                             </div>
-                             <div className="text-left">
-                               <div className="text-pink-500 font-black text-xl">{order.totalAmount?.toLocaleString()} تومان</div>
-                               <div className="bg-pink-50 text-pink-400 px-4 py-1 rounded-full text-[10px] font-black mt-2 inline-block shadow-inner">وضعیت: {order.status === 'Pending' ? 'در انتظار ⏳' : order.status === 'Shipped' ? 'ارسال شده 🚚' : order.status === 'Paid' ? 'پرداخت شده ✅' : order.status}</div>
-                             </div>
-                          </div>
-                        ))}
-                     </div>
-                   )}
-                 </>
-               )}
+          {/* محتوا */}
+          <section className="rounded-[2rem] border border-brand-50 bg-white p-6 shadow-card md:col-span-3 md:p-8">
+            {activeTab === 'orders' && (
+              <>
+                <h2 className="mb-6 border-r-4 border-brand-500 pr-3 text-sm font-black text-ink">سفارش‌های اخیر</h2>
 
-               {activeTab === 'wishlist' && (
-                 <>
-                    <h2 className="text-2xl font-black text-gray-800 mb-8 border-r-8 border-pink-500 pr-4">لباس‌های مورد علاقه من</h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        {wishlist.map((item: any) => (
-                          <div key={item.id} className="bg-white p-4 rounded-[2rem] border-2 border-pink-50 flex items-center gap-4 hover:shadow-lg transition-all border-dashed">
-                             <img src={item.imageUrl ? `https://localhost:7168${item.imageUrl}` : 'https://placehold.co/200x200/FFD1DC/white?text=👗'} className="w-20 h-20 rounded-2xl object-cover shadow-sm" alt="" />
-                             <div className="flex-1">
-                               <h4 className="font-bold text-gray-700 text-sm">{item.name}</h4>
-                               <p className="text-pink-500 font-black text-sm mt-1">{item.price?.toLocaleString()} تومان</p>
-                             </div>
-                             <button onClick={() => navigate(`/product/${item.id}`)} className="bg-pink-50 text-pink-500 w-10 h-10 rounded-full flex items-center justify-center hover:bg-pink-500 hover:text-white transition-all shadow-sm">👁️</button>
-                          </div>
-                        ))}
-                        {wishlist.length === 0 && <p className="col-span-full text-center py-24 text-gray-400 italic">لیست علاقه‌مندی‌ها خالی است 💔</p>}
-                    </div>
-                 </>
-               )}
+                {isLoading ? (
+                  <p className="py-16 text-center text-sm text-ink-light">در حال بارگذاری…</p>
+                ) : orders.length === 0 ? (
+                  <div className="rounded-[1.5rem] border-2 border-dashed border-brand-100 bg-brand-50/30 py-16 text-center">
+                    <Package className="mx-auto text-brand-300" size={32} aria-hidden="true" />
+                    <p className="mt-3 text-sm text-ink-soft">هنوز سفارشی ثبت نکرده‌اید.</p>
+                    <Link to="/" className="btn-primary mt-5 text-xs">
+                      شروع خرید
+                    </Link>
+                  </div>
+                ) : (
+                  <ul className="space-y-3">
+                    {orders.map((order) => {
+                      const status = String(order.status ?? '').toLowerCase();
 
-               {activeTab === 'tickets' && (
-                 <>
-                   <div className="flex justify-between items-center mb-10">
-                     <h2 className="text-2xl font-black text-gray-800 border-r-8 border-pink-500 pr-4">تیکت‌های پشتیبانی</h2>
-                     <button onClick={() => navigate('/dashboard/tickets/create')} className="bg-pink-500 text-white px-8 py-3 rounded-2xl font-bold shadow-lg hover:bg-pink-600 transition-all flex items-center gap-2 shadow-pink-100 active:scale-95"><span>📨</span> پیام جدید</button>
-                   </div>
-                   {isLoading ? <div className="text-center py-20 text-pink-400 font-bold animate-pulse">در حال لود گفتگوها...</div> : (
-                     <div className="space-y-4">
-                        {tickets.map((ticket: any) => (
-                          <div key={ticket.id} onClick={() => navigate(`/dashboard/tickets/${ticket.id}`)} className="bg-white p-6 rounded-[2.5rem] border-2 border-pink-50 flex justify-between items-center hover:border-pink-300 hover:shadow-lg cursor-pointer transition-all">
-                             <div className="flex items-center gap-4">
-                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-sm ${ticket.status === 'Open' ? 'bg-orange-50 text-orange-500' : 'bg-green-50 text-green-500'}`}>
-                                  {ticket.status === 'Open' ? '⏳' : '💬'}
-                                </div>
-                                <div>
-                                  <div className="font-black text-gray-700">{ticket.subject}</div>
-                                  <div className="text-gray-400 text-[10px] mt-1 font-mono">تیکت #{ticket.ticketNumber}</div>
-                                </div>
-                             </div>
-                             {/* نمایش لیبل ترجمه شده و رنگ‌بندی شده */}
-                             <div className={`px-4 py-1.5 rounded-full text-[10px] font-black shadow-inner ${getTicketStatusColor(ticket.status)}`}>
-                               {translateTicketStatus(ticket.status)}
-                             </div>
-                          </div>
-                        ))}
-                        {tickets.length === 0 && <p className="text-center py-24 text-gray-400 italic">پیامی برای نمایش وجود ندارد ✨</p>}
-                     </div>
-                   )}
-                 </>
-               )}
-            </div>
-          </div>
+                      return (
+                        <li key={order.id}>
+                          <Link
+                            to={`/dashboard/order/${order.id}`}
+                            className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-brand-50 p-4 transition-all hover:border-brand-200 hover:shadow-md"
+                          >
+                            <div>
+                              <p className="text-sm font-black text-ink">سفارش #{order.orderNumber ?? order.id}</p>
+                              <p className="mt-1 text-[11px] text-ink-light">{formatDate(order.createdAt)}</p>
+                            </div>
+
+                            <div className="text-left">
+                              <p className="text-sm font-black text-brand-600">{formatNumber(order.totalAmount)} تومان</p>
+                              <span className="mt-1 inline-block rounded-full bg-brand-50 px-3 py-0.5 text-[10px] font-black text-brand-600">
+                                {ORDER_STATUS_LABELS[status] ?? order.status ?? 'نامشخص'}
+                              </span>
+                            </div>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </>
+            )}
+
+            {activeTab === 'wishlist' && (
+              <>
+                <h2 className="mb-6 border-r-4 border-brand-500 pr-3 text-sm font-black text-ink">لباس‌های مورد علاقه</h2>
+
+                {wishlist.length === 0 ? (
+                  <p className="py-16 text-center text-sm text-ink-light">لیست علاقه‌مندی‌ها خالی است 💔</p>
+                ) : (
+                  <ul className="grid gap-4 sm:grid-cols-2">
+                    {wishlist.map((item) => (
+                      <li
+                        key={item.id}
+                        className="flex items-center gap-3 rounded-2xl border border-brand-50 p-3 transition-shadow hover:shadow-md"
+                      >
+                        <img
+                          src={getFirstImageUrl(item.imageUrl)}
+                          alt={item.name}
+                          width={80}
+                          height={80}
+                          loading="lazy"
+                          decoding="async"
+                          className="h-20 w-20 shrink-0 rounded-xl object-cover"
+                          onError={(event) => {
+                            const image = event.currentTarget;
+                            if (image.dataset.fallbackApplied === 'true') return;
+                            image.dataset.fallbackApplied = 'true';
+                            image.src = PLACEHOLDER_IMAGE;
+                          }}
+                        />
+                        <div className="flex-1">
+                          <p className="line-clamp-2 text-xs font-bold text-ink">{item.name}</p>
+                          <p className="mt-1 text-xs font-black text-brand-600">{formatNumber(item.price)} تومان</p>
+                        </div>
+                        <Link
+                          to={`/product/${item.id}`}
+                          className="rounded-xl bg-brand-50 px-3 py-2 text-[11px] font-bold text-brand-600 transition-colors hover:bg-brand-500 hover:text-white"
+                        >
+                          مشاهده
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
+            )}
+
+            {activeTab === 'tickets' && (
+              <>
+                <div className="mb-6 flex items-center justify-between gap-3">
+                  <h2 className="border-r-4 border-brand-500 pr-3 text-sm font-black text-ink">تیکت‌های پشتیبانی</h2>
+                  <Link to="/dashboard/tickets/create" className="btn-primary px-4 py-2.5 text-xs">
+                    <MessageSquarePlus size={16} aria-hidden="true" /> تیکت جدید
+                  </Link>
+                </div>
+
+                {isLoading ? (
+                  <p className="py-16 text-center text-sm text-ink-light">در حال بارگذاری…</p>
+                ) : tickets.length === 0 ? (
+                  <div className="rounded-[1.5rem] border-2 border-dashed border-brand-100 bg-brand-50/30 py-16 text-center">
+                    <Ticket className="mx-auto text-brand-300" size={32} aria-hidden="true" />
+                    <p className="mt-3 text-sm text-ink-soft">تیکتی ثبت نکرده‌اید.</p>
+                  </div>
+                ) : (
+                  <ul className="space-y-3">
+                    {tickets.map((ticket) => {
+                      const status = String(ticket.status ?? '').toLowerCase();
+
+                      return (
+                        <li key={ticket.id}>
+                          <Link
+                            to={`/dashboard/tickets/${ticket.id}`}
+                            className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-brand-50 p-4 transition-all hover:border-brand-200 hover:shadow-md"
+                          >
+                            <div>
+                              <p className="text-sm font-bold text-ink">{ticket.subject}</p>
+                              <p className="mt-1 font-mono text-[11px] text-ink-light" dir="ltr">
+                                #{ticket.ticketNumber ?? ticket.id}
+                              </p>
+                            </div>
+                            <span
+                              className={`rounded-full px-3 py-1 text-[10px] font-black ${
+                                status === 'open'
+                                  ? 'bg-amber-50 text-amber-600'
+                                  : status === 'inprogress'
+                                    ? 'bg-emerald-50 text-emerald-600'
+                                    : 'bg-gray-100 text-gray-500'
+                              }`}
+                            >
+                              {TICKET_STATUS_LABELS[status] ?? ticket.status}
+                            </span>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </>
+            )}
+          </section>
         </div>
-      </div>
+      </main>
 
-      <footer className="mt-20 text-center text-gray-300 text-[10px] pb-10">
-        پنل کاربری اختصاصی زی‌زی کیدز 🧸 تمامی حقوق محفوظ است
-      </footer>
+      <StoreFooter />
     </div>
   );
 };

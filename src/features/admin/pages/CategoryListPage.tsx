@@ -1,240 +1,286 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Layers, Plus, Trash2, Edit, AlertCircle, Check, X, Tag } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { Check, Layers, Pencil, Plus, Tag, Trash2, X } from 'lucide-react';
+import { useCategories } from '../../../shared/hooks/useCategories';
+import { endpoints } from '../../../shared/config/api-endpoints';
+import { http } from '../../../shared/services/http';
+import type { Category } from '../../../shared/types/models';
 
-interface CategoryDto {
-  id: number;
+interface FormState {
   name: string;
   slug: string;
   description: string;
   isActive: boolean;
 }
 
+const EMPTY_FORM: FormState = { name: '', slug: '', description: '', isActive: true };
+
+/** ساخت اسلاگ انگلیسی از نام (سازگار با حروف فارسی: در صورت نبود حرف لاتین، مقدار پیش‌فرض) */
+function buildSlug(name: string): string {
+  const slug = name
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+
+  return slug || `category-${Date.now().toString(36)}`;
+}
+
 const CategoryListPage: React.FC = () => {
-  const navigate = useNavigate();
-  const [categories, setCategories] = useState<CategoryDto[]>([]);
-  const [loading, setLoading] = useState(true);
-  
-  // استیت‌های مربوط به مودال ثبت/ویرایش
+  const { categories, loading, refresh } = useCategories();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [currentId, setCurrentId] = useState<number | null>(null);
-  
-  // فیلدهای فرم
-  const [name, setName] = useState('');
-  const [slug, setSlug] = useState('');
-  const [description, setDescription] = useState('');
+  const [editing, setEditing] = useState<Category | null>(null);
+  const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
 
-  const API_URL = 'https://localhost:7168/api/Category';
+  const modalTitle = useMemo(() => (editing ? 'ویرایش دسته‌بندی' : 'دسته‌بندی جدید'), [editing]);
 
-  const fetchCategories = async () => {
-    setLoading(true);
+  const openAdd = () => {
+    setEditing(null);
+    setForm(EMPTY_FORM);
+    setIsModalOpen(true);
+  };
+
+  const openEdit = (category: Category) => {
+    setEditing(category);
+    setForm({
+      name: category.name,
+      slug: category.slug ?? '',
+      description: category.description ?? '',
+      isActive: category.isActive !== false,
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleNameChange = (name: string) => {
+    setForm((prev) => ({
+      ...prev,
+      name,
+      slug: prev.slug && editing ? prev.slug : buildSlug(name),
+    }));
+  };
+
+  const save = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setSaving(true);
+
+    const payload = {
+      id: editing?.id ?? 0,
+      name: form.name.trim(),
+      slug: form.slug.trim(),
+      description: form.description.trim(),
+      displayOrder: 0,
+      isActive: form.isActive,
+    };
+
     try {
-      const response = await fetch(API_URL);
-      const result = await response.json();
-      setCategories(result.data || []);
+      if (editing) {
+        await http.put(endpoints.categories.base, payload);
+      } else {
+        await http.post(endpoints.categories.base, payload);
+      }
+
+      toast.success(editing ? 'دسته‌بندی ویرایش شد.' : 'دسته‌بندی جدید ثبت شد.');
+      setIsModalOpen(false);
+      await refresh();
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      toast.error(error instanceof Error ? error.message : 'ذخیره‌ی دسته‌بندی انجام نشد.');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const handleNameChange = (val: string) => {
-    setName(val);
-    // ساخت اسلاگ (Slug) به صورت اتوماتیک
-    const autoSlug = val.trim().replace(/\s+/g, '-').replace(/[^\w-]/g, '').toLowerCase();
-    setSlug(autoSlug || `category-${Math.floor(Math.random() * 1000)}`);
-  };
-
-  const openAddModal = () => {
-    setEditMode(false);
-    setCurrentId(null);
-    setName('');
-    setSlug('');
-    setDescription('');
-    setIsModalOpen(true);
-  };
-
-  const openEditModal = (cat: CategoryDto) => {
-    setEditMode(true);
-    setCurrentId(cat.id);
-    setName(cat.name);
-    setSlug(cat.slug);
-    setDescription(cat.description);
-    setIsModalOpen(true);
-  };
-
-  const saveCategory = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const token = localStorage.getItem('token');
-      const payload = {
-        id: currentId || 0, // در حالت Add این صفر میره
-        name,
-        slug,
-        description,
-        displayOrder: 0,
-        isActive: true
-      };
-
-      const method = editMode ? 'PUT' : 'POST';
-      
-      const response = await fetch(API_URL, {
-        method: method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (response.ok) {
-        alert(editMode ? 'دسته‌بندی آپدیت شد 🚀' : 'دسته‌بندی جدید ثبت شد 🎉');
-        setIsModalOpen(false);
-        fetchCategories();
-      } else {
-        const errorData = await response.json();
-        alert(`خطا: ${errorData.message}`);
-      }
-    } catch (error) {
-      alert('خطا در ارتباط با سرور');
-    }
-  };
-
-  const deleteCategory = async (id: number) => {
-    if (!window.confirm('آیا از حذف این دسته‌بندی مطمئن هستی؟ (ممکنه لباس‌هاش هم پاک بشن!)')) return;
+  const remove = async (category: Category) => {
+    if (!window.confirm(`«${category.name}» حذف شود؟ ممکن است محصولات این دسته هم تحت تأثیر قرار بگیرند.`)) return;
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (response.ok) {
-        alert('دسته‌بندی حذف شد 🗑️');
-        fetchCategories();
-      } else {
-        const errorData = await response.json();
-        alert(`خطا: ${errorData.message}`);
-      }
+      await http.delete(endpoints.categories.byId(category.id));
+      toast.success('دسته‌بندی حذف شد.');
+      await refresh();
     } catch (error) {
-      alert('خطا در ارتباط با سرور');
+      toast.error(error instanceof Error ? error.message : 'حذف دسته‌بندی انجام نشد.');
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8 text-right font-sans" dir="rtl">
-      <div className="max-w-4xl mx-auto">
-        
-        {/* Header */}
-        <header className="flex justify-between items-center mb-8 bg-white p-6 rounded-2xl shadow-sm">
-          <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-            <Layers className="text-blue-500" /> مدیریت دسته‌بندی‌ها
+    <div className="min-h-screen bg-[#FFFAFB] text-right">
+      <div className="container-shop py-8">
+        <header className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-[2rem] border border-brand-50 bg-white p-6 shadow-card">
+          <h1 className="flex items-center gap-2 text-lg font-black text-ink">
+            <Layers className="text-lavender-500" size={22} aria-hidden="true" /> مدیریت دسته‌بندی‌ها
           </h1>
-          <div className="flex gap-2">
-            <button 
-              onClick={openAddModal} 
-              className="bg-blue-500 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg hover:bg-blue-600 transition-all flex items-center gap-2"
-            >
-              <Plus size={18} /> دسته‌بندی جدید
+
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={openAdd} className="btn-primary px-4 py-2 text-xs">
+              <Plus size={14} aria-hidden="true" /> دسته‌بندی جدید
             </button>
+            <Link
+              to="/dashboard"
+              className="rounded-xl px-3 py-2 text-xs font-bold text-ink-soft transition-colors hover:bg-brand-50"
+            >
+              ← حساب کاربری
+            </Link>
           </div>
         </header>
 
-        {/* لیست */}
-        <div className="bg-white rounded-[2rem] shadow-xl overflow-hidden border border-gray-100">
-          <table className="w-full text-right text-sm">
-            <thead className="bg-gray-50 text-gray-500 border-b border-gray-100">
-              <tr>
-                <th className="p-5 font-bold">نام دسته‌بندی</th>
-                <th className="p-5 font-bold">لینک انگلیسی (Slug)</th>
-                <th className="p-5 font-bold text-center">وضعیت</th>
-                <th className="p-5 font-bold text-center">عملیات</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {loading ? (
-                <tr>
-                  <td colSpan={4} className="p-10 text-center text-blue-400 font-bold animate-pulse">در حال دریافت اطلاعات... 🌈</td>
+        <div className="overflow-hidden rounded-[2rem] border border-brand-50 bg-white shadow-card">
+          <div className="overflow-x-auto">
+            <table className="w-full text-right">
+              <thead>
+                <tr className="border-b border-brand-50 bg-brand-50/50 text-[11px] font-black text-ink-soft">
+                  <th className="p-4">نام دسته</th>
+                  <th className="p-4">اسلاگ</th>
+                  <th className="p-4 text-center">وضعیت</th>
+                  <th className="p-4 text-center">عملیات</th>
                 </tr>
-              ) : categories.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="p-10 text-center text-gray-400">
-                    <AlertCircle className="mx-auto mb-2 text-orange-300" /> هیچ دسته‌بندی پیدا نشد.
-                  </td>
-                </tr>
-              ) : (
-                categories.map((cat) => (
-                  <tr key={cat.id} className="hover:bg-blue-50/20 transition-colors">
-                    <td className="p-5 font-black text-gray-700 text-base">{cat.name}</td>
-                    <td className="p-5 text-gray-400 font-mono text-xs" dir="ltr">{cat.slug}</td>
-                    <td className="p-5 text-center">
-                      {cat.isActive 
-                        ? <span className="bg-green-100 text-green-600 px-3 py-1 rounded-lg text-xs font-bold">فعال ✅</span>
-                        : <span className="bg-red-100 text-red-600 px-3 py-1 rounded-lg text-xs font-bold">غیرفعال ❌</span>
-                      }
+              </thead>
+
+              <tbody className="divide-y divide-brand-50">
+                {loading && (
+                  <tr>
+                    <td colSpan={4} className="p-10 text-center text-xs text-ink-light">
+                      در حال بارگذاری…
                     </td>
-                    <td className="p-5 text-center">
-                      <div className="flex justify-center gap-2">
-                        <button onClick={() => openEditModal(cat)} className="bg-orange-50 text-orange-500 p-2 rounded-lg hover:bg-orange-500 hover:text-white transition-all">
-                          <Edit size={18} />
+                  </tr>
+                )}
+
+                {!loading && categories.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="p-10 text-center text-xs text-ink-light">
+                      دسته‌بندی‌ای ثبت نشده است.
+                    </td>
+                  </tr>
+                )}
+
+                {categories.map((category) => (
+                  <tr key={category.id} className="text-xs transition-colors hover:bg-brand-50/30">
+                    <td className="p-4 font-bold text-ink">{category.name}</td>
+                    <td className="p-4 font-mono text-[11px] text-ink-light" dir="ltr">
+                      {category.slug ?? '—'}
+                    </td>
+                    <td className="p-4 text-center">
+                      {category.isActive !== false ? (
+                        <span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black text-emerald-600">فعال</span>
+                      ) : (
+                        <span className="rounded-full bg-red-50 px-3 py-1 text-[10px] font-black text-red-500">غیرفعال</span>
+                      )}
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => openEdit(category)}
+                          aria-label={`ویرایش ${category.name}`}
+                          className="grid h-8 w-8 place-items-center rounded-lg bg-lavender-50 text-lavender-500 transition-colors hover:bg-lavender-500 hover:text-white"
+                        >
+                          <Pencil size={15} aria-hidden="true" />
                         </button>
-                        <button onClick={() => deleteCategory(cat.id)} className="bg-red-50 text-red-500 p-2 rounded-lg hover:bg-red-500 hover:text-white transition-all">
-                          <Trash2 size={18} />
+                        <button
+                          type="button"
+                          onClick={() => remove(category)}
+                          aria-label={`حذف ${category.name}`}
+                          className="grid h-8 w-8 place-items-center rounded-lg bg-red-50 text-red-500 transition-colors hover:bg-red-500 hover:text-white"
+                        >
+                          <Trash2 size={15} aria-hidden="true" />
                         </button>
                       </div>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
+      </div>
 
-        {/* Modal ثبت و ویرایش */}
-        {isModalOpen && (
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white w-full max-w-md rounded-[2.5rem] p-8 shadow-2xl animate-in fade-in zoom-in duration-200">
-              <div className="flex justify-between items-center mb-6 border-b pb-4">
-                <h2 className="text-2xl font-black text-gray-800 flex items-center gap-2">
-                  <Tag className="text-blue-500"/> {editMode ? 'ویرایش دسته‌بندی' : 'دسته‌بندی جدید'}
-                </h2>
-                <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-red-500 bg-gray-50 p-2 rounded-full">
-                  <X size={20} />
-                </button>
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-ink/50 p-4 backdrop-blur-sm">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="category-modal-title"
+            className="w-full max-w-md rounded-[2rem] bg-white p-6 shadow-2xl animate-fade-in-up"
+          >
+            <div className="mb-5 flex items-center justify-between border-b border-brand-50 pb-4">
+              <h2 id="category-modal-title" className="flex items-center gap-2 text-sm font-black text-ink">
+                <Tag className="text-lavender-500" size={18} aria-hidden="true" /> {modalTitle}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                aria-label="بستن"
+                className="grid h-8 w-8 place-items-center rounded-full bg-brand-50 text-ink-soft transition-colors hover:text-red-500"
+              >
+                <X size={16} aria-hidden="true" />
+              </button>
+            </div>
+
+            <form onSubmit={save} className="space-y-4">
+              <div>
+                <label htmlFor="category-name" className="mb-1.5 block text-xs font-bold text-ink-soft">
+                  نام دسته‌بندی
+                </label>
+                <input
+                  id="category-name"
+                  type="text"
+                  value={form.name}
+                  onChange={(event) => handleNameChange(event.target.value)}
+                  className="field"
+                  placeholder="مثلاً سیسمونی نوزاد"
+                  required
+                  maxLength={60}
+                />
               </div>
 
-              <form onSubmit={saveCategory} className="space-y-5">
-                <div>
-                  <label className="text-xs font-bold text-gray-500 mb-1 block">نام دسته‌بندی (فارسی)</label>
-                  <input type="text" value={name} onChange={(e) => handleNameChange(e.target.value)} required className="w-full bg-gray-50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-300 font-bold" placeholder="مثلاً: سیسمونی نوزاد" />
-                </div>
-                
-                <div>
-                  <label className="text-xs font-bold text-gray-500 mb-1 block">نام انگلیسی (اتوماتیک)</label>
-                  <input type="text" value={slug} onChange={(e) => setSlug(e.target.value)} required className="w-full bg-gray-50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-300 text-left font-mono text-sm" dir="ltr" />
-                </div>
+              <div>
+                <label htmlFor="category-slug" className="mb-1.5 block text-xs font-bold text-ink-soft">
+                  اسلاگ (انگلیسی)
+                </label>
+                <input
+                  id="category-slug"
+                  type="text"
+                  value={form.slug}
+                  onChange={(event) => setForm((prev) => ({ ...prev, slug: event.target.value }))}
+                  className="field font-mono text-xs"
+                  dir="ltr"
+                  required
+                  maxLength={60}
+                />
+              </div>
 
-                <div>
-                  <label className="text-xs font-bold text-gray-500 mb-1 block">توضیحات (اختیاری)</label>
-                  <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-gray-50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-300 min-h-[100px]"></textarea>
-                </div>
+              <div>
+                <label htmlFor="category-description" className="mb-1.5 block text-xs font-bold text-ink-soft">
+                  توضیحات (اختیاری)
+                </label>
+                <textarea
+                  id="category-description"
+                  value={form.description}
+                  onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
+                  className="field min-h-24 leading-7"
+                  maxLength={300}
+                />
+              </div>
 
-                <button type="submit" className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg transition-all active:scale-95 flex justify-center items-center gap-2">
-                  <Check size={20} /> {editMode ? 'ذخیره تغییرات' : 'ثبت دسته‌بندی'}
-                </button>
-              </form>
-            </div>
+              <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-ink-soft">
+                <input
+                  type="checkbox"
+                  checked={form.isActive}
+                  onChange={(event) => setForm((prev) => ({ ...prev, isActive: event.target.checked }))}
+                  className="h-4 w-4 accent-brand-500"
+                />
+                نمایش در فروشگاه
+              </label>
+
+              <button type="submit" disabled={saving} className="btn-primary w-full py-3.5">
+                <Check size={18} aria-hidden="true" /> {saving ? 'در حال ذخیره…' : 'ذخیره'}
+              </button>
+            </form>
           </div>
-        )}
-
-      </div>
+        </div>
+      )}
     </div>
   );
 };

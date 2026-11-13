@@ -1,65 +1,170 @@
 import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
+import StoreHeader from '../../../shared/components/StoreHeader';
+import StoreFooter from '../../../shared/components/StoreFooter';
 import { useCart } from '../../../shared/context/CartContext';
-import { useNavigate, Link } from 'react-router-dom';
+import { formatNumber } from '../../../shared/utils/format';
+import { PLACEHOLDER_IMAGE, getImageUrl } from '../../../shared/utils/imageUrl';
 
 const CartPage: React.FC = () => {
-  const { cartItems, addToCart, removeFromCart, clearCart } = useCart();
-  const navigate = useNavigate(); // تعریف نویگیت
+  const { cartItems, totalItems, totalPrice, increaseQuantity, decreaseQuantity, removeFromCart, clearCart } =
+    useCart();
+  const navigate = useNavigate();
 
-  const totalPrice = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-
-  const handleGoToCheckout = () => {
-    console.log("در حال رفتن به صفحه تسویه‌حساب..."); // برای تست در کنسول F12
-    navigate('/checkout'); // رفتن به آدرس تکمیل سفارش
+  const handleIncrease = (lineId: string) => {
+    const result = increaseQuantity(lineId);
+    if (!result.success) toast.warning(result.message ?? 'امکان افزایش تعداد نیست.');
   };
 
   return (
-    <div className="min-h-screen bg-[#FFF9F9] font-sans p-8 text-right" dir="rtl">
-      <div className="max-w-5xl mx-auto">
-        <header className="flex justify-between items-center mb-12">
-          <Link to="/" className="text-pink-500 font-bold">← بازگشت</Link>
-          <h1 className="text-3xl font-black text-gray-800 italic">سبد خرید شما 🛒</h1>
-        </header>
+    <div className="min-h-screen bg-[#FFFAFB] text-right">
+      <StoreHeader backTo="/" backLabel="ادامه خرید" />
+
+      <main className="container-shop py-8">
+        <div className="mb-8 flex items-center justify-between gap-3">
+          <h1 className="text-xl font-black text-ink md:text-2xl">
+            سبد خرید {totalItems > 0 && <span className="text-sm font-bold text-ink-light">({formatNumber(totalItems)} کالا)</span>}
+          </h1>
+
+          {cartItems.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                clearCart();
+                toast.info('سبد خرید خالی شد.');
+              }}
+              className="text-xs font-bold text-ink-light transition-colors hover:text-red-500"
+            >
+              خالی کردن سبد
+            </button>
+          )}
+        </div>
 
         {cartItems.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-[3rem] shadow-sm border-2 border-pink-50">
-            <p className="text-gray-400">سبد خریدت فعلاً خالیه عزیزم! 🎈</p>
+          <div className="rounded-[2rem] border-2 border-dashed border-brand-100 bg-white py-20 text-center">
+            <p className="text-5xl" aria-hidden="true">
+              🎈
+            </p>
+            <h2 className="mt-4 text-lg font-black text-ink">سبد خرید شما خالی است</h2>
+            <p className="mt-2 text-sm text-ink-soft">از ویترین فروشگاه، لباس دلخواه کوچولوی‌تان را انتخاب کنید.</p>
+            <Link to="/" className="btn-primary mt-6 text-sm">
+              <ShoppingBag size={18} aria-hidden="true" /> رفتن به فروشگاه
+            </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-            <div className="lg:col-span-2 space-y-6">
+          <div className="grid gap-8 lg:grid-cols-3">
+            <ul className="space-y-4 lg:col-span-2">
               {cartItems.map((item) => (
-                <div key={item.id} className="bg-white p-6 rounded-[2.5rem] shadow-sm flex items-center gap-6 border-2 border-white hover:border-pink-200 transition-all">
-                  <div className="flex-1">
-                    <h3 className="font-black text-gray-700 text-xl">{item.name}</h3>
-                    <p className="text-pink-500 font-black">{item.price.toLocaleString()} تومان</p>
-                  </div>
-                  <div className="flex items-center gap-4 bg-pink-50 p-2 rounded-2xl">
-                    <button onClick={() => removeFromCart(item.id)} className="w-8 h-8 flex items-center justify-center bg-white rounded-xl text-red-500 font-bold shadow-sm">-</button>
-                    <span className="font-black text-pink-600">{item.quantity}</span>
-                    <button onClick={() => addToCart(item)} className="w-8 h-8 flex items-center justify-center bg-white rounded-xl text-green-500 font-bold shadow-sm">+</button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                <li
+                  key={item.lineId}
+                  className="flex flex-col gap-4 rounded-[2rem] border border-brand-50 bg-white p-4 shadow-card sm:flex-row sm:items-center"
+                >
+                  <Link to={`/product/${item.id}`} className="shrink-0">
+                    <img
+                      src={getImageUrl(item.imageUrl)}
+                      alt={item.name}
+                      width={96}
+                      height={96}
+                      loading="lazy"
+                      decoding="async"
+                      className="h-24 w-24 rounded-2xl object-cover"
+                      onError={(event) => {
+                        const image = event.currentTarget;
+                        if (image.dataset.fallbackApplied === 'true') return;
+                        image.dataset.fallbackApplied = 'true';
+                        image.src = PLACEHOLDER_IMAGE;
+                      }}
+                    />
+                  </Link>
 
-            {/* بخش فاکتور */}
-            <div className="bg-white p-10 rounded-[3rem] shadow-xl border-4 border-pink-100 h-fit sticky top-28">
-              <h2 className="text-xl font-bold text-gray-700 mb-6">خلاصه سفارش</h2>
-              <div className="text-2xl font-black text-pink-600 mb-8 flex justify-between">
-                <span>جمع کل:</span>
-                <span>{totalPrice.toLocaleString()} تومان</span>
+                  <div className="flex-1">
+                    <Link to={`/product/${item.id}`} className="text-sm font-bold text-ink hover:text-brand-600">
+                      {item.name}
+                    </Link>
+
+                    {item.sizeName && (
+                      <p className="mt-1 inline-block rounded-lg bg-brand-50 px-2 py-0.5 text-[11px] font-bold text-brand-600">
+                        سایز: {item.sizeName}
+                      </p>
+                    )}
+
+                    <p className="mt-2 text-sm font-black text-brand-600">
+                      {formatNumber(item.price)}{' '}
+                      <span className="text-[10px] font-medium text-ink-light">تومان</span>
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4 sm:flex-col sm:items-end">
+                    <div className="flex items-center gap-1 rounded-2xl bg-brand-50 p-1">
+                      <button
+                        type="button"
+                        onClick={() => handleIncrease(item.lineId)}
+                        aria-label="افزایش تعداد"
+                        className="grid h-8 w-8 place-items-center rounded-xl bg-white text-emerald-600 shadow-sm transition-transform active:scale-90"
+                      >
+                        <Plus size={16} aria-hidden="true" />
+                      </button>
+
+                      <span className="min-w-8 text-center text-sm font-black text-ink">
+                        {formatNumber(item.quantity)}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => decreaseQuantity(item.lineId)}
+                        aria-label="کاهش تعداد"
+                        className="grid h-8 w-8 place-items-center rounded-xl bg-white text-brand-600 shadow-sm transition-transform active:scale-90"
+                      >
+                        <Minus size={16} aria-hidden="true" />
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => removeFromCart(item.lineId)}
+                      aria-label={`حذف ${item.name} از سبد`}
+                      className="grid h-8 w-8 place-items-center rounded-xl text-ink-light transition-colors hover:bg-red-50 hover:text-red-500"
+                    >
+                      <Trash2 size={16} aria-hidden="true" />
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            {/* خلاصه سفارش */}
+            <aside className="h-fit rounded-[2rem] border border-brand-100 bg-white p-6 shadow-card lg:sticky lg:top-24">
+              <h2 className="text-sm font-black text-ink">خلاصه سفارش</h2>
+
+              <dl className="mt-5 space-y-3 text-xs">
+                <div className="flex items-center justify-between text-ink-soft">
+                  <dt>مبلغ کالاها</dt>
+                  <dd className="font-bold text-ink">{formatNumber(totalPrice)} تومان</dd>
+                </div>
+                <div className="flex items-center justify-between text-ink-soft">
+                  <dt>هزینه ارسال</dt>
+                  <dd className="text-ink-light">در مرحله پرداخت محاسبه می‌شود</dd>
+                </div>
+              </dl>
+
+              <div className="mt-5 flex items-center justify-between border-t border-brand-50 pt-4">
+                <span className="text-sm font-black text-ink">جمع کل</span>
+                <span className="text-lg font-black text-brand-600">
+                  {formatNumber(totalPrice)} <span className="text-[10px] font-medium text-ink-light">تومان</span>
+                </span>
               </div>
-              <button 
-                onClick={handleGoToCheckout} // فراخوانی تابع نویگیت
-                className="w-full bg-pink-500 text-white py-5 rounded-[2rem] font-bold text-xl shadow-lg hover:bg-pink-600 transition-all transform active:scale-95"
-              >
-                تکمیل سفارش و پرداخت ✨
+
+              <button type="button" onClick={() => navigate('/checkout')} className="btn-primary mt-6 w-full py-4">
+                ادامه و تکمیل سفارش
               </button>
-            </div>
+            </aside>
           </div>
         )}
-      </div>
+      </main>
+
+      <StoreFooter />
     </div>
   );
 };

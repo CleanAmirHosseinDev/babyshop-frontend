@@ -1,78 +1,95 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { ShieldCheck } from 'lucide-react';
+import AuthShell from '../../../shared/components/AuthShell';
 import { useAuth } from '../../../shared/hooks/useAuth';
+import { digitsOnly } from '../../../shared/utils/format';
+
+interface LocationState {
+  phoneNumber?: string;
+}
 
 const VerifyPhonePage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { verifyPhone, loading, error } = useAuth();
+  const { verifyPhone, loading, error, isAuthenticated } = useAuth();
+
+  const phoneNumber = (location.state as LocationState | null)?.phoneNumber ?? '';
   const [code, setCode] = useState('');
-  
-  const phoneNumber = location.state?.phoneNumber || '';
+  const [formError, setFormError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("حمله به دکمه تایید با کد:", code); // برای تست در کنسول
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setFormError(null);
 
-    // اگر کد 123456 بود، همینطوری وارد شو (برای تست سریع اگر بک‌اِند اذیت کرد)
-    if (code === "123456") {
-      console.log("استفاده از کد تست برای ورود");
-      localStorage.setItem('token', 'fake-token');
-      window.location.href = '/'; // رفرش و رفتن به صفحه اصلی
+    if (code.length !== 6) {
+      setFormError('کد تایید ۶ رقمی است.');
       return;
     }
 
     const result = await verifyPhone(phoneNumber, code);
-    console.log("نتیجه تایید شماره:", result);
 
     if (result.success) {
-      navigate('/');
+      toast.success('شماره موبایل با موفقیت تایید شد 🎉');
+      navigate(isAuthenticated ? '/' : '/login', { replace: true });
     }
   };
 
+  const message = formError ?? error;
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 via-white to-lavender-50 p-4">
-      <div className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl p-8 border-4 border-pink-100 text-center">
-        <div className="w-20 h-20 rounded-full bg-pink-100 flex items-center justify-center text-5xl mx-auto mb-4">
-          📩
+    <AuthShell
+      title="تایید شماره موبایل"
+      subtitle={
+        phoneNumber
+          ? `کد تایید به شماره ${phoneNumber} ارسال شد`
+          : 'کد تاییدی که برای شما پیامک شده را وارد کنید'
+      }
+      icon="📩"
+      footer={
+        <Link to="/login" className="font-bold text-brand-600 hover:underline">
+          بازگشت به صفحه ورود
+        </Link>
+      }
+    >
+      {message && (
+        <div role="alert" className="mb-4 rounded-2xl border border-red-100 bg-red-50 p-3 text-center text-xs font-bold text-red-600">
+          {message}
         </div>
-        <h1 className="text-2xl font-bold text-pink-500 mb-2">تأیید شماره موبایل</h1>
-        <p className="text-gray-400 mb-6 text-sm">
-          کد تایید برای شماره <span className="font-bold text-pink-400">{phoneNumber}</span> ارسال شده است.
-        </p>
+      )}
 
-        {error && (
-          <div className="bg-red-50 text-red-500 text-sm rounded-2xl p-3 mb-4 border border-red-100">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+        <div>
+          <label htmlFor="verify-code" className="mb-1.5 block text-xs font-bold text-ink-soft">
+            کد تایید
+          </label>
           <input
+            id="verify-code"
             type="text"
+            inputMode="numeric"
+            autoComplete="one-time-code"
             value={code}
-            onChange={(e) => setCode(e.target.value)}
-            placeholder="کد تایید"
-            className="w-full px-5 py-4 rounded-2xl border border-pink-100 text-center text-2xl tracking-widest focus:border-pink-400 focus:outline-none bg-pink-50/30"
+            onChange={(event) => setCode(digitsOnly(event.target.value, 6))}
+            placeholder="──────"
+            className="field text-center text-xl tracking-[0.6em]"
+            dir="ltr"
+            maxLength={6}
             required
           />
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-pink-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-pink-200 hover:bg-pink-600 transition-all disabled:opacity-50"
-          >
-            {loading ? 'در حال بررسی...' : '🧸 تایید و ورود'}
-          </button>
-        </form>
-        
-        <button 
-          onClick={() => navigate('/login')}
-          className="mt-4 text-pink-300 text-sm hover:underline"
-        >
-          برگشت به لاگین
+        </div>
+
+        <button type="submit" disabled={loading} className="btn-primary w-full py-4">
+          {loading ? (
+            'در حال بررسی…'
+          ) : (
+            <>
+              <ShieldCheck size={18} aria-hidden="true" /> تایید شماره
+            </>
+          )}
         </button>
-      </div>
-    </div>
+      </form>
+    </AuthShell>
   );
 };
 

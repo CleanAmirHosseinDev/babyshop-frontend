@@ -1,75 +1,46 @@
-import { useState } from 'react';
-import { environment } from '../config/environment';
+import { useCallback, useState } from 'react';
+import { endpoints } from '../config/api-endpoints';
+import { http } from '../services/http';
+import type { PaymentResult } from '../types/models';
 
 export const usePayment = () => {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  // تابع کمکی برای گرفتن توکن معتبر
-  const getToken = () => localStorage.getItem('token');
-
-  // ۱. شروع فرآیند پرداخت و ایجاد تراکنش
-  const startPayment = async (orderId: number, amount: number) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(`${environment.apiUrl}/Payment`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${getToken()}` 
-        },
-        body: JSON.stringify({
+  /** شروع پرداخت و ایجاد تراکنش */
+  const startPayment = useCallback(
+    async (orderId: number, amount: number): Promise<{ success: boolean; data?: PaymentResult; message?: string }> => {
+      setLoading(true);
+      try {
+        const data = await http.post<PaymentResult>(endpoints.payment.base, {
           OrderId: orderId,
           Amount: amount,
-          PaymentMethod: "Online"
-        }),
-      });
-
-      const result = await response.json();
-      
-      if (response.ok && result.success) {
-        return { success: true, data: result.data };
-      } else {
-        throw new Error(result.message || 'خطا در ایجاد تراکنش پرداخت');
+          PaymentMethod: 'Online',
+        });
+        return { success: true, data };
+      } catch (error) {
+        return { success: false, message: error instanceof Error ? error.message : 'خطا در ایجاد تراکنش پرداخت' };
+      } finally {
+        setLoading(false);
       }
-    } catch (err: any) {
-      setError(err.message);
-      return { success: false, message: err.message };
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [],
+  );
 
-  // ۲. تایید نهایی پرداخت (Verify) - هماهنگ با PaymentController
-  const verifyPayment = async (paymentId: number, refNumber: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      // ارسال پارامترها به صورت Query String چون در کنترلر DTO تعریف نشده است
-      const url = `${environment.apiUrl}/Payment/verify?paymentId=${paymentId}&referenceNumber=${refNumber}`;
-      
-      const response = await fetch(url, {
-        method: 'POST', // طبق [HttpPost("verify")] در کد شما
-        headers: { 
-          'Authorization': `Bearer ${getToken()}` 
-        }
-      });
-
-      const result = await response.json();
-
-      if (response.ok && result.success) {
-        return { success: true, data: result.data };
-      } else {
-        throw new Error(result.message || 'تایید پرداخت با خطا مواجه شد');
+  /** تایید نهایی پرداخت */
+  const verifyPayment = useCallback(
+    async (paymentId: number, referenceNumber: string): Promise<{ success: boolean; message?: string }> => {
+      setLoading(true);
+      try {
+        await http.post(endpoints.payment.verify(paymentId, referenceNumber));
+        return { success: true };
+      } catch (error) {
+        return { success: false, message: error instanceof Error ? error.message : 'تایید پرداخت با خطا مواجه شد' };
+      } finally {
+        setLoading(false);
       }
-    } catch (err: any) {
-      setError(err.message);
-      return { success: false, message: err.message };
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [],
+  );
 
-  return { startPayment, verifyPayment, loading, error };
+  return { startPayment, verifyPayment, loading };
 };

@@ -1,192 +1,392 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Camera, Check, X, ArrowRight, Tag, Layers, Baby, Users, AlignRight, Link2 } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { AlignRight, Baby, Camera, Check, Layers, Link2, Tag, Users, X } from 'lucide-react';
+import { useCategories } from '../../../shared/hooks/useCategories';
+import { endpoints } from '../../../shared/config/api-endpoints';
+import { http } from '../../../shared/services/http';
+import { formatNumber } from '../../../shared/utils/format';
+
+const AGE_OPTIONS = [
+  { code: '0-3', label: 'نوزاد (۰-۳ ماه)' },
+  { code: '3-6', label: '۳ تا ۶ ماه' },
+  { code: '6-12', label: '۶ تا ۱۲ ماه' },
+  { code: '12-24', label: '۱ تا ۲ سال' },
+  { code: '24+', label: 'بالای ۲ سال' },
+];
+
+const GENDERS = [
+  { id: '1', label: 'پسرانه 👦' },
+  { id: '2', label: 'دخترانه 👧' },
+  { id: '3', label: 'هر دو 🌈' },
+];
+
+const MAX_IMAGES = 6;
+const MAX_IMAGE_SIZE = 3 * 1024 * 1024; // ۳ مگابایت
+
+function buildSlug(name: string): string {
+  const slug = name
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+
+  return slug || `product-${Date.now().toString(36)}`;
+}
 
 const ProductCreatePage: React.FC = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [categories, setCategories] = useState<any[]>([]);
-  
+  const { categories } = useCategories();
+
+  const [saving, setSaving] = useState(false);
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
   const [price, setPrice] = useState('');
   const [description, setDescription] = useState('');
-  const [gender, setGender] = useState('1'); 
+  const [gender, setGender] = useState('1');
   const [categoryId, setCategoryId] = useState('');
-  
   const [selectedAges, setSelectedAges] = useState<string[]>([]);
-  const [ageStocks, setAgeStocks] = useState<{ [key: string]: string }>({});
-  
+  const [ageStocks, setAgeStocks] = useState<Record<string, string>>({});
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
 
-  const ageOptions = [
-    { code: '0-3', label: 'نوزاد (۰-۳ ماه)' },
-    { code: '3-6', label: '۳ تا ۶ ماه' },
-    { code: '6-12', label: '۶ تا ۱۲ ماه' },
-    { code: '12-24', label: '۱ تا ۲ سال' },
-    { code: '24+', label: 'بالای ۲ سال' },
-  ];
+  const previewsRef = useRef<string[]>([]);
+  previewsRef.current = previews;
 
+  // آزادسازی Object URL ها هنگام خروج از صفحه (جلوگیری از نشتی حافظه)
   useEffect(() => {
-    const fetchCats = async () => {
-      try {
-        const response = await fetch('https://localhost:7168/api/Category');
-        const result = await response.json();
-        const data = result.data || result;
-        setCategories(data);
-        if (data.length > 0) setCategoryId(data[0].id || data[0].Id);
-      } catch {
-        setCategories([{ id: 1, name: 'لباس نوزادی' }, { id: 2, name: 'اکسسوری' }]);
-      }
+    return () => {
+      previewsRef.current.forEach((url) => URL.revokeObjectURL(url));
     };
-    fetchCats();
   }, []);
 
-  const handleNameChange = (val: string) => {
-    setName(val);
-    let autoSlug = val.trim().replace(/\s+/g, '-').replace(/[^\w-]/g, '').toLowerCase();
-    if (autoSlug.length === 0) {
-      autoSlug = `product-${Math.floor(Math.random() * 1000000)}`;
-    }
-    setSlug(autoSlug);
+  useEffect(() => {
+    if (!categoryId && categories.length > 0) setCategoryId(String(categories[0].id));
+  }, [categories, categoryId]);
+
+  const handleNameChange = (value: string) => {
+    setName(value);
+    setSlug(buildSlug(value));
   };
 
   const toggleAge = (code: string) => {
-    setSelectedAges(prev => {
+    setSelectedAges((prev) => {
       if (prev.includes(code)) {
-        const newStocks = { ...ageStocks };
-        delete newStocks[code];
-        setAgeStocks(newStocks);
-        return prev.filter(c => c !== code);
-      } else {
-        setAgeStocks(prevStocks => ({ ...prevStocks, [code]: '0' }));
-        return [...prev, code];
+        const nextStocks = { ...ageStocks };
+        delete nextStocks[code];
+        setAgeStocks(nextStocks);
+        return prev.filter((item) => item !== code);
       }
+
+      setAgeStocks((prevStocks) => ({ ...prevStocks, [code]: '0' }));
+      return [...prev, code];
     });
   };
 
-  const handleStockChange = (code: string, value: string) => {
-    setAgeStocks(prev => ({ ...prev, [code]: value }));
-  };
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = '';
+    if (files.length === 0) return;
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const files = Array.from(e.target.files);
-      setImages(prev => [...prev, ...files]);
-      const newPreviews = files.map(f => URL.createObjectURL(f));
-      setPreviews(prev => [...prev, ...newPreviews]);
+    const validFiles: File[] = [];
+
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) {
+        toast.error(`«${file.name}» تصویر نیست.`);
+        continue;
+      }
+      if (file.size > MAX_IMAGE_SIZE) {
+        toast.error(`حجم «${file.name}» بیش از ۳ مگابایت است.`);
+        continue;
+      }
+      validFiles.push(file);
     }
+
+    const room = MAX_IMAGES - images.length;
+    if (validFiles.length > room) {
+      toast.warning(`حداکثر ${MAX_IMAGES} تصویر مجاز است.`);
+    }
+
+    const accepted = validFiles.slice(0, Math.max(0, room));
+    if (accepted.length === 0) return;
+
+    setImages((prev) => [...prev, ...accepted]);
+    setPreviews((prev) => [...prev, ...accepted.map((file) => URL.createObjectURL(file))]);
   };
 
   const removeImage = (index: number) => {
-    setImages(prev => prev.filter((_, i) => i !== index));
-    setPreviews(prev => prev.filter((_, i) => i !== index));
+    const url = previews[index];
+    if (url) URL.revokeObjectURL(url);
+
+    setImages((prev) => prev.filter((_, i) => i !== index));
+    setPreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (selectedAges.length === 0) return alert('لطفاً حداقل یک رده سنی انتخاب کن مامانی! 👶');
-    setLoading(true);
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (selectedAges.length === 0) {
+      toast.error('حداقل یک رده سنی انتخاب کنید.');
+      return;
+    }
+
+    if (!price || Number(price) <= 0) {
+      toast.error('قیمت محصول را صحیح وارد کنید.');
+      return;
+    }
+
+    if (!categoryId) {
+      toast.error('دسته‌بندی محصول را انتخاب کنید.');
+      return;
+    }
+
+    setSaving(true);
+
+    const inventoryDetails = selectedAges.map((code) => ({
+      AgeRange: code,
+      Stock: Number.parseInt(ageStocks[code] ?? '0', 10) || 0,
+    }));
+
+    const formData = new FormData();
+    formData.append('Name', name.trim());
+    formData.append('Slug', slug || buildSlug(name));
+    formData.append('Price', String(Number(price)));
+    formData.append('Description', description.trim());
+    formData.append('Gender', gender);
+    formData.append('CategoryId', categoryId);
+    formData.append('AgeRange', selectedAges[0]);
+    formData.append('InventoryDetails', JSON.stringify(inventoryDetails));
+    formData.append(
+      'InitialStock',
+      String(inventoryDetails.reduce((sum, item) => sum + item.Stock, 0)),
+    );
+    images.forEach((file) => formData.append('Images', file));
 
     try {
-      const token = localStorage.getItem('token');
-      const formData = new FormData();
-      
-      formData.append('Name', name);
-      formData.append('Slug', slug || `product-${Date.now()}`); 
-      formData.append('Price', price);
-      formData.append('Description', description);
-      formData.append('Gender', gender);
-      formData.append('CategoryId', categoryId);
-      formData.append('AgeRange', selectedAges[0]);
-
-      const inventoryDetails = selectedAges.map(code => ({
-        AgeRange: code,
-        Stock: parseInt(ageStocks[code] || '0', 10)
-      }));
-      formData.append('InventoryDetails', JSON.stringify(inventoryDetails));
-      
-      const totalStock = inventoryDetails.reduce((sum, item) => sum + item.Stock, 0);
-      formData.append('InitialStock', totalStock.toString());
-
-      images.forEach((file) => formData.append('Images', file));
-
-      const response = await fetch('https://localhost:7168/api/Product', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }, 
-        body: formData 
-      });
-
-      if (response.ok) {
-        alert('محصول جدید با موفقیت ثبت شد! ✨');
-        navigate('/admin/inventory'); 
-      } else {
-        const err = await response.json();
-        alert(`خطا: ${err.message || 'مشکلی در ثبت رخ داد'}`);
-      }
-    } catch {
-      alert('خطای اتصال به سرور!');
+      await http.postForm(endpoints.products.base, formData);
+      toast.success('محصول جدید ثبت شد.');
+      navigate('/products', { replace: true });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'ثبت محصول انجام نشد.');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#FDF8F8] p-4 md:p-12 text-right font-sans" dir="rtl">
-      <div className="max-w-5xl mx-auto bg-white rounded-[3.5rem] shadow-2xl overflow-hidden border-4 border-white relative">
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-10 text-white flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-black mb-2">✨ تعریف لباس جدید زی‌زی</h1>
-            <p className="text-blue-100 text-sm font-medium">مشخصات رو کامل پر کن تا بریم برای فروش!</p>
-          </div>
-          <button onClick={() => navigate(-1)} className="bg-white/20 p-4 rounded-3xl hover:bg-white/30 transition-all shadow-inner">
-            <ArrowRight size={28} />
-          </button>
-        </div>
+    <div className="min-h-screen bg-[#FFFAFB] text-right">
+      <div className="container-shop py-8">
+        <form
+          onSubmit={handleSubmit}
+          className="mx-auto max-w-4xl space-y-6 rounded-[2rem] border border-brand-50 bg-white p-6 shadow-card sm:p-8"
+        >
+          <header className="flex flex-wrap items-center justify-between gap-3 border-b border-brand-50 pb-5">
+            <h1 className="text-lg font-black text-ink">✨ تعریف محصول جدید</h1>
+            <Link to="/products" className="text-xs font-bold text-brand-500 hover:underline">
+              بازگشت به لیست
+            </Link>
+          </header>
 
-        <form onSubmit={handleSubmit} className="p-10 space-y-8">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 text-blue-500 mb-2"><Tag size={20} /><span className="font-black text-lg">اطلاعات پایه</span></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-1"><label className="text-xs font-bold text-gray-400 mr-2">نام لباس</label><input type="text" value={name} onChange={(e) => handleNameChange(e.target.value)} className="w-full p-5 rounded-[1.5rem] bg-gray-50 border-2 border-transparent focus:border-blue-400 outline-none font-bold transition-all" required /></div>
-              <div className="space-y-1"><label className="text-xs font-bold text-gray-400 mr-2 flex items-center gap-1"><Link2 size={12}/> اسم انگلیسی (Slug)</label><input type="text" value={slug} onChange={(e) => setSlug(e.target.value)} className="w-full p-5 rounded-[1.5rem] bg-gray-50 border-2 border-transparent focus:border-blue-400 outline-none text-left font-mono" dir="ltr" required /></div>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label htmlFor="product-name" className="mb-1.5 flex items-center gap-1 text-xs font-bold text-ink-soft">
+                <Tag size={13} aria-hidden="true" /> نام محصول
+              </label>
+              <input
+                id="product-name"
+                type="text"
+                value={name}
+                onChange={(event) => handleNameChange(event.target.value)}
+                className="field"
+                required
+                maxLength={80}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="product-slug" className="mb-1.5 flex items-center gap-1 text-xs font-bold text-ink-soft">
+                <Link2 size={13} aria-hidden="true" /> اسلاگ (انگلیسی)
+              </label>
+              <input
+                id="product-slug"
+                type="text"
+                value={slug}
+                onChange={(event) => setSlug(event.target.value)}
+                className="field font-mono text-xs"
+                dir="ltr"
+                required
+                maxLength={80}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="product-price" className="mb-1.5 block text-xs font-bold text-ink-soft">
+                قیمت (تومان)
+              </label>
+              <input
+                id="product-price"
+                type="number"
+                inputMode="numeric"
+                min={1000}
+                step={1000}
+                value={price}
+                onChange={(event) => setPrice(event.target.value)}
+                className="field font-mono"
+                dir="ltr"
+                required
+              />
+              {price && (
+                <p className="mt-1.5 text-[11px] text-ink-light">{formatNumber(Number(price))} تومان</p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="product-category" className="mb-1.5 flex items-center gap-1 text-xs font-bold text-ink-soft">
+                <Layers size={13} aria-hidden="true" /> دسته‌بندی
+              </label>
+              <select
+                id="product-category"
+                value={categoryId}
+                onChange={(event) => setCategoryId(event.target.value)}
+                className="field appearance-none"
+                required
+              >
+                <option value="">انتخاب کنید…</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2"><label className="text-xs font-black text-gray-400 mr-2">قیمت (تومان)</label><input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full p-5 rounded-[1.5rem] bg-gray-50 border-2 border-transparent focus:border-blue-400 outline-none font-black text-blue-600" required /></div>
-            <div className="space-y-2"><label className="text-xs font-black text-gray-400 mr-2 flex items-center gap-1"><Layers size={12}/> دسته بندی</label><select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="w-full p-5 rounded-[1.5rem] bg-gray-50 border-2 border-transparent focus:border-blue-400 outline-none font-bold appearance-none">{categories.map(c => <option key={c.id || c.Id} value={c.id || c.Id}>{c.name || c.Name}</option>)}</select></div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-gray-50/50 p-6 rounded-[2.5rem]">
-            <div className="space-y-3"><label className="text-sm font-black text-gray-600 mr-2 flex items-center gap-1"><Users size={16}/> این لباس برای کیه؟</label><div className="flex gap-2">{[ {id:'1', l:'پسرانه 👦'}, {id:'2', l:'دخترانه 👧'}, {id:'3', l:'هر دو 🌈'} ].map(g => (<button key={g.id} type="button" onClick={() => setGender(g.id)} className={`flex-1 py-3 rounded-2xl font-bold text-xs transition-all ${gender === g.id ? 'bg-blue-500 text-white shadow-lg' : 'bg-white text-gray-400 border border-gray-100 hover:border-blue-200'}`}>{g.l}</button>))}</div></div>
-            <div className="space-y-3"><label className="text-sm font-black text-gray-600 mr-2 flex items-center gap-1"><Baby size={16}/> رده‌های سنی مناسب:</label><div className="flex flex-wrap gap-2">{ageOptions.map(age => (<button key={age.code} type="button" onClick={() => toggleAge(age.code)} className={`px-4 py-2 rounded-full text-[10px] font-black transition-all ${selectedAges.includes(age.code) ? 'bg-pink-500 text-white shadow-md' : 'bg-white text-gray-400 border border-gray-100 hover:border-pink-200'}`}>{age.label}</button>))}</div></div>
+          <div className="grid gap-5 rounded-[1.5rem] bg-brand-50/40 p-5 sm:grid-cols-2">
+            <div>
+              <p className="mb-2 flex items-center gap-1 text-xs font-black text-ink-soft">
+                <Users size={14} aria-hidden="true" /> این محصول برای چه کسی است؟
+              </p>
+              <div className="flex gap-2">
+                {GENDERS.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => setGender(option.id)}
+                    aria-pressed={gender === option.id}
+                    className={`flex-1 rounded-2xl py-2.5 text-[11px] font-bold transition-all ${
+                      gender === option.id
+                        ? 'bg-brand-500 text-white shadow-md'
+                        : 'border border-brand-100 bg-white text-ink-soft hover:border-brand-300'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="mb-2 flex items-center gap-1 text-xs font-black text-ink-soft">
+                <Baby size={14} aria-hidden="true" /> رده‌های سنی
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {AGE_OPTIONS.map((age) => (
+                  <button
+                    key={age.code}
+                    type="button"
+                    onClick={() => toggleAge(age.code)}
+                    aria-pressed={selectedAges.includes(age.code)}
+                    className={`rounded-full px-3 py-1.5 text-[10px] font-black transition-all ${
+                      selectedAges.includes(age.code)
+                        ? 'bg-brand-500 text-white shadow-md'
+                        : 'border border-brand-100 bg-white text-ink-soft hover:border-brand-300'
+                    }`}
+                  >
+                    {age.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           {selectedAges.length > 0 && (
-            <div className="bg-blue-50/50 p-6 rounded-[2.5rem] border-2 border-blue-50 space-y-4">
-              <label className="text-sm font-black text-blue-600 flex items-center gap-2"> موجودی انبار برای سایزهای انتخابی:</label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {selectedAges.map(code => {
-                  const option = ageOptions.find(o => o.code === code);
-                  return (
-                    <div key={code} className="bg-white p-4 rounded-2xl shadow-sm border border-blue-100">
-                      <span className="block text-xs font-bold text-gray-500 mb-2">{option?.label}</span>
-                      <input type="number" value={ageStocks[code] || ''} onChange={(e) => handleStockChange(code, e.target.value)} placeholder="تعداد..." className="w-full bg-gray-50 border-none rounded-xl p-3 text-center font-black outline-none focus:ring-2 focus:ring-blue-300" required />
-                    </div>
-                  );
-                })}
+            <div className="space-y-3 rounded-[1.5rem] border border-lavender-100 bg-lavender-50/40 p-5">
+              <p className="text-xs font-black text-lavender-500">موجودی اولیه هر سایز</p>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {selectedAges.map((code) => (
+                  <div key={code} className="rounded-2xl border border-lavender-100 bg-white p-3">
+                    <label htmlFor={`stock-${code}`} className="mb-1.5 block text-[11px] font-bold text-ink-soft">
+                      {AGE_OPTIONS.find((option) => option.code === code)?.label}
+                    </label>
+                    <input
+                      id={`stock-${code}`}
+                      type="number"
+                      min={0}
+                      value={ageStocks[code] ?? ''}
+                      onChange={(event) =>
+                        setAgeStocks((prev) => ({ ...prev, [code]: event.target.value }))
+                      }
+                      className="field py-2 text-center font-mono"
+                      dir="ltr"
+                    />
+                  </div>
+                ))}
               </div>
             </div>
           )}
 
-          <div className="space-y-2"><label className="text-xs font-black text-gray-400 mr-2 flex items-center gap-1"><AlignRight size={14}/> توضیحات محصول</label><textarea value={description} onChange={(e) => setDescription(e.target.value)} className="w-full p-6 rounded-[2rem] bg-gray-50 outline-none h-32 border-2 border-transparent focus:border-blue-400 font-bold transition-all"></textarea></div>
+          <div>
+            <label htmlFor="product-description" className="mb-1.5 flex items-center gap-1 text-xs font-bold text-ink-soft">
+              <AlignRight size={13} aria-hidden="true" /> توضیحات محصول
+            </label>
+            <textarea
+              id="product-description"
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              className="field min-h-28 leading-7"
+              maxLength={1000}
+            />
+          </div>
 
-          <div className="space-y-4"><label className="text-xs font-black text-gray-400 mr-2 flex items-center gap-1">📸 عکس‌های محصول</label><div className="grid grid-cols-4 sm:grid-cols-6 gap-4 border-4 border-dashed border-gray-50 p-6 rounded-[2.5rem] bg-gray-50/30">{previews.map((src, i) => (<div key={i} className="relative aspect-square rounded-[1.5rem] overflow-hidden border-2 border-white shadow-md group"><img src={src} className="w-full h-full object-cover" /><button type="button" onClick={() => removeImage(i)} className="absolute top-1 left-1 bg-red-500 text-white rounded-full p-1 shadow-lg hover:scale-110 transition-transform"><X size={14}/></button></div>))}<label className="aspect-square rounded-[1.5rem] bg-white border-2 border-dashed border-gray-200 flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all text-blue-400"><Camera size={32} /><span className="text-[9px] font-black mt-2">افزودن</span><input type="file" multiple onChange={handleImageChange} className="hidden" accept="image/*" /></label></div></div>
+          <div>
+            <p className="mb-2 text-xs font-bold text-ink-soft">📸 تصاویر محصول (حداکثر {MAX_IMAGES} تصویر)</p>
+            <div className="grid grid-cols-3 gap-3 rounded-[1.5rem] border-2 border-dashed border-brand-100 p-4 sm:grid-cols-6">
+              {previews.map((src, index) => (
+                <div key={src} className="relative aspect-square overflow-hidden rounded-2xl border border-brand-50">
+                  <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    aria-label="حذف تصویر"
+                    className="absolute end-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-red-500 text-white shadow"
+                  >
+                    <X size={12} aria-hidden="true" />
+                  </button>
+                </div>
+              ))}
 
-          <button type="submit" disabled={loading} className={`w-full py-6 rounded-[2.5rem] font-black text-2xl shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3 ${loading ? 'bg-gray-300 text-gray-500' : 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:shadow-blue-200 hover:-translate-y-1'}`}>
-            {loading ? 'در حال ثبت اطلاعات...' : <><Check size={32} /> تایید و ثبت نهایی محصول</>}
+              {images.length < MAX_IMAGES && (
+                <label className="grid aspect-square cursor-pointer place-items-center rounded-2xl border-2 border-dashed border-brand-200 bg-white text-brand-400 transition-colors hover:border-brand-400 hover:bg-brand-50">
+                  <span className="text-center">
+                    <Camera className="mx-auto" size={24} aria-hidden="true" />
+                    <span className="mt-1 block text-[10px] font-black">افزودن</span>
+                  </span>
+                  <input type="file" multiple accept="image/*" onChange={handleImageChange} className="hidden" />
+                </label>
+              )}
+            </div>
+          </div>
+
+          <button type="submit" disabled={saving} className="btn-primary w-full py-4 text-sm">
+            {saving ? (
+              'در حال ثبت…'
+            ) : (
+              <>
+                <Check size={18} aria-hidden="true" /> ثبت محصول
+              </>
+            )}
           </button>
         </form>
       </div>
