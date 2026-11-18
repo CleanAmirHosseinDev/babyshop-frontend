@@ -93,7 +93,7 @@ const CheckoutPage: React.FC = () => {
   const isBusy = submitting || orderLoading || paymentLoading;
 
   return (
-    <div className="min-h-screen bg-[#FFFAFB] text-right">
+    <div className="min-h-screen bg-white text-right">
       <StoreHeader backTo="/cart" backLabel="سبد خرید" />
 
       <main className="container-shop py-8">

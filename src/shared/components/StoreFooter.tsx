@@ -1,6 +1,37 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { BadgeCheck, RefreshCw, ShieldCheck, Truck } from 'lucide-react';
+import { BadgeCheck, MessageCircle, MessageSquare, RefreshCw, Send, ShieldCheck, Truck } from 'lucide-react';
+
+/** آیکون‌های برند در این نسخه‌ی lucide-react حذف شده‌اند؛ اینستاگرام را خودمان تعریف می‌کنیم */
+const InstagramIcon: React.FC<{ size?: number; className?: string; 'aria-hidden'?: boolean | 'true' | 'false' }> = ({
+  size = 24,
+  className,
+}) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+    aria-hidden="true"
+  >
+    <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+  </svg>
+);
+
+const socials = [
+  { label: 'اینستاگرام', icon: InstagramIcon, href: 'https://instagram.com/zizikids' },
+  { label: 'کانال تلگرام', icon: Send, href: 'https://t.me/zizikids' },
+  { label: 'بله', icon: MessageSquare, href: 'https://bale.dev/zizikids' },
+  { label: 'واتس‌اپ', icon: MessageCircle, href: 'https://wa.me/989120000000' },
+];
 
 const features = [
   { icon: Truck, title: 'ارسال سریع', description: 'پست پیشتاز به سراسر کشور' },
@@ -25,6 +56,30 @@ const StoreFooter: React.FC = () => {
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="border-t border-brand-50">
+        <div className="container-shop flex flex-col items-center justify-between gap-4 py-6 sm:flex-row">
+          <div className="text-center sm:text-right">
+            <p className="text-sm font-black text-ink">ارتباط با ما</p>
+            <p className="mt-1 text-xs text-ink-light">در شبکه‌های اجتماعی با ما همراه باشید 🧸</p>
+          </div>
+          <div className="flex items-center gap-3">
+            {socials.map(({ label, icon: Icon, href }) => (
+              <a
+                key={label}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={label}
+                aria-label={label}
+                className="grid h-11 w-11 place-items-center rounded-full border border-brand-200 text-ink-soft transition-all hover:border-ink hover:bg-ink hover:text-white"
+              >
+                <Icon size={19} aria-hidden="true" />
+              </a>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="border-t border-brand-50">

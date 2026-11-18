@@ -4,18 +4,18 @@ export default {
   theme: {
     extend: {
       colors: {
-        // پالت اصلی برند: صورتی ملایم نوزادی
+        // پالت اصلی برند: خنثی و مینیمال (الهام از Zara Kids)
         brand: {
-          50: '#FFF5F8',
-          100: '#FFE3ED',
-          200: '#FFC9DC',
-          300: '#FFA6C4',
-          400: '#FF85AC',
-          500: '#F76C9B',
-          600: '#E25584',
-          700: '#C13F6D',
-          800: '#9E3056',
-          900: '#7E2847',
+          50: '#FAFAF8',
+          100: '#F1F1ED',
+          200: '#E3E3DC',
+          300: '#CDCDC4',
+          400: '#A8A89F',
+          500: '#1F1F1D',
+          600: '#151513',
+          700: '#0D0D0C',
+          800: '#070707',
+          900: '#000000',
         },
         cream: '#FFF8F0',
         mint: '#E7F6F0',
@@ -28,15 +28,15 @@ export default {
           500: '#8B5CF6',
         },
         ink: {
-          DEFAULT: '#3F3D46',
-          soft: '#6B6873',
-          light: '#9B98A3',
+          DEFAULT: '#191919',
+          soft: '#63635E',
+          light: '#97958D',
         },
         // سازگاری با کلاس‌های قدیمی پروژه
         primary: {
-          soft: '#FFE3ED',
-          warm: '#F76C9B',
-          DEFAULT: '#F76C9B',
+          soft: '#F1F1ED',
+          warm: '#1F1F1D',
+          DEFAULT: '#1F1F1D',
         },
         secondary: {
           cream: '#FFF8F0',
@@ -78,10 +78,10 @@ export default {
         },
       },
       boxShadow: {
-        soft: '0 10px 30px -15px rgba(247, 108, 155, 0.3)',
-        warmer: '0 20px 40px -15px rgba(247, 108, 155, 0.4)',
-        cute: '0 5px 15px rgba(255, 227, 237, 0.5)',
-        card: '0 8px 30px -12px rgba(63, 61, 70, 0.15)',
+        soft: '0 10px 30px -15px rgba(31, 31, 29, 0.18)',
+        warmer: '0 20px 40px -15px rgba(31, 31, 29, 0.22)',
+        cute: '0 5px 15px rgba(227, 227, 220, 0.5)',
+        card: '0 8px 30px -12px rgba(25, 25, 25, 0.12)',
       },
     },
   },

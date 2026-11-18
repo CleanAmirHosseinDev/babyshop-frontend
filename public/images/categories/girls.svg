@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-label="دخترانه">
+  <rect width="400" height="300" fill="#F6F4EF"/>
+  <circle cx="200" cy="160" r="115" fill="#ECE8DF"/>
+  <circle cx="112" cy="98" r="26" fill="#4A342C"/>
+  <circle cx="288" cy="98" r="26" fill="#4A342C"/>
+  <circle cx="103" cy="84" r="9" fill="#E4A6B5"/>
+  <circle cx="297" cy="84" r="9" fill="#E4A6B5"/>
+  <circle cx="121" cy="172" r="15" fill="#F6D7B8"/>
+  <circle cx="279" cy="172" r="15" fill="#F6D7B8"/>
+  <circle cx="200" cy="172" r="80" fill="#F6D7B8"/>
+  <path d="M120 172 A80 80 0 0 1 280 172 Z" fill="#4A342C"/>
+  <path d="M120 172 q-4 40 22 56 q-26 -8 -26 -44 z" fill="#4A342C"/>
+  <path d="M280 172 q4 40 -22 56 q26 -8 26 -44 z" fill="#4A342C"/>
+  <circle cx="168" cy="188" r="7.5" fill="#2E2A27"/>
+  <circle cx="232" cy="188" r="7.5" fill="#2E2A27"/>
+  <path d="M182 214 Q200 228 218 214" stroke="#2E2A27" stroke-width="5.5" fill="none" stroke-linecap="round"/>
+  <circle cx="146" cy="206" r="10" fill="#F0B9A0" opacity="0.55"/>
+  <circle cx="254" cy="206" r="10" fill="#F0B9A0" opacity="0.55"/>
+  <path d="M197 250 L172 239 L172 261 Z" fill="#E4A6B5"/>
+  <path d="M203 250 L228 239 L228 261 Z" fill="#E4A6B5"/>
+  <circle cx="200" cy="250" r="7" fill="#C97F93"/>
+</svg>

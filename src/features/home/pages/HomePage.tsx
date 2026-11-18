@@ -9,11 +9,19 @@ import { useInventory } from '../../../shared/hooks/useInventory';
 import { useWishlist } from '../../../shared/context/WishlistContext';
 import { formatNumber } from '../../../shared/utils/format';
 
-const GENDER_FILTERS = [
-  { id: 0, label: 'همه', emoji: '🌈' },
-  { id: 1, label: 'پسرانه', emoji: '👦' },
-  { id: 2, label: 'دخترانه', emoji: '👧' },
+const GENDER_CARDS = [
+  { id: 0, label: 'همه', image: '/images/categories/all.svg' },
+  { id: 1, label: 'پسرانه', image: '/images/categories/boys.svg' },
+  { id: 2, label: 'دخترانه', image: '/images/categories/girls.svg' },
 ] as const;
+
+/** انتخاب تصویر دسته بر اساس نام دسته‌ی ثبت‌شده در سیستم */
+const categoryImage = (name: string) => {
+  if (name.includes('پسر')) return '/images/categories/boys.svg';
+  if (name.includes('دختر')) return '/images/categories/girls.svg';
+  if (name.includes('نوزاد')) return '/images/categories/baby.svg';
+  return '/images/categories/all.svg';
+};
 
 const HomePage: React.FC = () => {
   const { products, loading: productsLoading, error, refresh } = useProducts();
@@ -66,7 +74,7 @@ const HomePage: React.FC = () => {
   }, [products, searchTerm, activeGender, activeCategory]);
 
   return (
-    <div className="min-h-screen bg-[#FFFAFB] text-right">
+    <div className="min-h-screen bg-white text-right">
       <StoreHeader />
 
       {/* بنر اصلی */}
@@ -89,19 +97,18 @@ const HomePage: React.FC = () => {
               پارچه‌های ضدحساسیت، دوخت تمیز و سایزبندی دقیق؛ بهترین انتخاب برای خوش‌پوش‌ترین کوچولوی دنیا ✨
             </p>
 
-            {/* دسته‌بندی‌ها */}
-            <div className="mt-8 flex flex-wrap justify-center gap-2 md:justify-start">
+            {/* دسته‌بندی‌ها — نوار ورق‌زدنی با تصویر */}
+            <div className="no-scrollbar mt-8 flex snap-x gap-2 overflow-x-auto pb-1 md:justify-start">
               <button
                 type="button"
                 onClick={() => setActiveCategory(null)}
                 aria-pressed={activeCategory === null}
-                className={`rounded-full px-4 py-2 text-xs font-bold shadow-sm transition-all ${
-                  activeCategory === null
-                    ? 'bg-brand-500 text-white'
-                    : 'bg-white text-ink-soft hover:bg-brand-50'
+                className={`w-24 shrink-0 snap-start rounded-2xl border-2 p-1.5 transition-all sm:w-28 ${
+                  activeCategory === null ? 'border-ink bg-white' : 'border-transparent hover:border-brand-300'
                 }`}
               >
-                🌟 همه قفسه‌ها
+                <img src="/images/categories/all.svg" alt="همه قفسه‌ها" className="aspect-[4/3] w-full rounded-xl object-cover" />
+                <span className="mt-1.5 block truncate text-center text-[11px] font-bold text-ink-soft">همه قفسه‌ها</span>
               </button>
 
               {categories.map((category) => (
@@ -110,13 +117,17 @@ const HomePage: React.FC = () => {
                   type="button"
                   onClick={() => setActiveCategory(category.id)}
                   aria-pressed={activeCategory === category.id}
-                  className={`rounded-full px-4 py-2 text-xs font-bold shadow-sm transition-all ${
-                    activeCategory === category.id
-                      ? 'bg-brand-500 text-white'
-                      : 'bg-white text-ink-soft hover:bg-brand-50'
+                  className={`w-24 shrink-0 snap-start rounded-2xl border-2 p-1.5 transition-all sm:w-28 ${
+                    activeCategory === category.id ? 'border-ink bg-white' : 'border-transparent hover:border-brand-300'
                   }`}
                 >
-                  {category.name}
+                  <img
+                    src={categoryImage(category.name)}
+                    alt={category.name}
+                    className="aspect-[4/3] w-full rounded-xl object-cover"
+                    loading="lazy"
+                  />
+                  <span className="mt-1.5 block truncate text-center text-[11px] font-bold text-ink-soft">{category.name}</span>
                 </button>
               ))}
             </div>
@@ -161,20 +172,20 @@ const HomePage: React.FC = () => {
             />
           </div>
 
-          <div className="mt-4 flex justify-center gap-2">
-            {GENDER_FILTERS.map((filter) => (
+          {/* فیلتر جنسیت — نوار ورق‌زدنی با تصویر */}
+          <div className="no-scrollbar mt-4 flex snap-x gap-2 overflow-x-auto pb-1">
+            {GENDER_CARDS.map((filter) => (
               <button
                 key={filter.id}
                 type="button"
                 onClick={() => setActiveGender(filter.id)}
                 aria-pressed={activeGender === filter.id}
-                className={`rounded-2xl px-5 py-2 text-xs font-bold transition-all ${
-                  activeGender === filter.id
-                    ? 'bg-brand-500 text-white shadow-lg shadow-brand-200'
-                    : 'bg-brand-50 text-ink-soft hover:bg-brand-100'
+                className={`w-20 shrink-0 snap-start rounded-2xl border-2 p-1.5 transition-all sm:w-24 ${
+                  activeGender === filter.id ? 'border-ink bg-white' : 'border-transparent hover:border-brand-300'
                 }`}
               >
-                {filter.emoji} {filter.label}
+                <img src={filter.image} alt={filter.label} className="aspect-[4/3] w-full rounded-xl object-cover" />
+                <span className="mt-1.5 block text-center text-[11px] font-bold text-ink-soft">{filter.label}</span>
               </button>
             ))}
           </div>

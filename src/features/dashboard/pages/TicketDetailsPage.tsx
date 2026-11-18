@@ -64,7 +64,7 @@ const TicketDetailsPage: React.FC = () => {
 
   if (loading && !ticket) {
     return (
-      <div className="grid min-h-screen place-items-center bg-[#FFFAFB]">
+      <div className="grid min-h-screen place-items-center bg-white">
         <span className="h-10 w-10 animate-spin rounded-full border-4 border-brand-100 border-t-brand-500" />
       </div>
     );
@@ -72,7 +72,7 @@ const TicketDetailsPage: React.FC = () => {
 
   if (notFound || !ticket) {
     return (
-      <div className="grid min-h-screen place-items-center bg-[#FFFAFB] p-4 text-center">
+      <div className="grid min-h-screen place-items-center bg-white p-4 text-center">
         <div>
           <p className="text-4xl" aria-hidden="true">
             🎈
@@ -91,7 +91,7 @@ const TicketDetailsPage: React.FC = () => {
   const replies = ticket.replies ?? [];
 
   return (
-    <div className="min-h-screen bg-[#FFFAFB] p-4 text-right">
+    <div className="min-h-screen bg-white p-4 text-right">
       <div className="mx-auto flex h-[85vh] max-w-3xl flex-col overflow-hidden rounded-[2rem] border border-brand-100 bg-white shadow-2xl">
         <header className="flex items-center justify-between gap-3 bg-brand-500 px-5 py-4 text-white">
           <Link

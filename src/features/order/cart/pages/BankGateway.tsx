@@ -20,7 +20,7 @@ const BankGateway: React.FC = () => {
 
   if (!Number.isFinite(paymentId) || paymentId <= 0) {
     return (
-      <div className="grid min-h-screen place-items-center bg-[#FFFAFB] p-4 text-center">
+      <div className="grid min-h-screen place-items-center bg-white p-4 text-center">
         <div className="w-full max-w-md rounded-[2rem] border border-brand-100 bg-white p-8 shadow-card">
           <AlertTriangle className="mx-auto text-amber-500" size={40} aria-hidden="true" />
           <h1 className="mt-4 text-lg font-black text-ink">تراکنشی برای پرداخت پیدا نشد</h1>

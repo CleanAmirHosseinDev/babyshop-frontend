@@ -10,8 +10,8 @@
 
   body {
     font-family: 'Vazirmatn', Tahoma, system-ui, sans-serif;
-    background-color: #fffafb;
-    color: #3f3d46;
+    background-color: #ffffff;
+    color: #191919;
     font-feature-settings: 'ss01';
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -31,13 +31,13 @@
 
   /* حالت فوکوس یکدست برای دسترس‌پذیری (کیبورد) */
   :focus-visible {
-    outline: 2px solid #f76c9b;
+    outline: 2px solid #1f1f1d;
     outline-offset: 2px;
   }
 
   ::selection {
-    background-color: #ffc9dc;
-    color: #7e2847;
+    background-color: #1f1f1d;
+    color: #ffffff;
   }
 
   /* اعداد فارسی و لاتین هم‌تراز */
@@ -55,17 +55,17 @@
   }
 
   ::-webkit-scrollbar-track {
-    background: #fff5f8;
+    background: #f5f5f3;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #ffc9dc;
+    background: #d5d5cd;
     border-radius: 999px;
-    border: 2px solid #fff5f8;
+    border: 2px solid #f5f5f3;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #ffa6c4;
+    background: #b9b9b0;
   }
 
   @media (prefers-reduced-motion: reduce) {

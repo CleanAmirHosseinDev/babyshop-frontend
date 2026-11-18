@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-label="نوزاد">
+  <rect width="400" height="300" fill="#F6F4EF"/>
+  <circle cx="200" cy="158" r="115" fill="#ECE8DF"/>
+  <path d="M100 300 Q100 232 200 232 Q300 232 300 300 Z" fill="#E4E9EE"/>
+  <circle cx="200" cy="170" r="72" fill="#F8DFC4"/>
+  <path d="M128 162 A72 72 0 0 1 272 162 Z" fill="#9FB6CF"/>
+  <rect x="124" y="156" width="152" height="16" rx="8" fill="#7E97B2"/>
+  <circle cx="200" cy="92" r="14" fill="#E8D9B5"/>
+  <path d="M160 186 q10 10 20 0" stroke="#2E2A27" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <path d="M220 186 q10 10 20 0" stroke="#2E2A27" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <circle cx="148" cy="202" r="9" fill="#F0B9A0" opacity="0.55"/>
+  <circle cx="252" cy="202" r="9" fill="#F0B9A0" opacity="0.55"/>
+  <circle cx="200" cy="214" r="14" fill="#E4A6B5"/>
+  <circle cx="200" cy="214" r="5" fill="#F8DFC4"/>
+  <rect x="188" y="226" width="24" height="8" rx="4" fill="#C97F93"/>
+</svg>

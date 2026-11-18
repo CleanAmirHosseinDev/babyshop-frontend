@@ -163,7 +163,7 @@ const ProductCreatePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FFFAFB] text-right">
+    <div className="min-h-screen bg-white text-right">
       <div className="container-shop py-8">
         <form
           onSubmit={handleSubmit}
