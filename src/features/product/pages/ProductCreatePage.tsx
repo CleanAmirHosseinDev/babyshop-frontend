@@ -167,7 +167,7 @@ const ProductCreatePage: React.FC = () => {
       <div className="container-shop py-8">
         <form
           onSubmit={handleSubmit}
-          className="mx-auto max-w-4xl space-y-6 rounded-[2rem] border border-brand-50 bg-white p-6 shadow-card sm:p-8"
+          className="mx-auto max-w-4xl space-y-6 rounded-none border border-brand-50 bg-white p-6 shadow-none sm:p-8"
         >
           <header className="flex flex-wrap items-center justify-between gap-3 border-b border-brand-50 pb-5">
             <h1 className="text-lg font-black text-ink">✨ تعریف محصول جدید</h1>
@@ -262,9 +262,9 @@ const ProductCreatePage: React.FC = () => {
                     type="button"
                     onClick={() => setGender(option.value)}
                     aria-pressed={gender === option.value}
-                    className={`flex-1 rounded-2xl py-2.5 text-[11px] font-bold transition-all ${
+                    className={`flex-1 rounded-none py-2.5 text-[11px] font-bold transition-all ${
                       gender === option.value
-                        ? 'bg-brand-500 text-white shadow-md'
+                        ? 'bg-brand-500 text-white shadow-none'
                         : 'border border-brand-100 bg-white text-ink-soft hover:border-brand-300'
                     }`}
                   >
@@ -287,7 +287,7 @@ const ProductCreatePage: React.FC = () => {
                     aria-pressed={selectedAges.includes(age.code)}
                     className={`rounded-full px-3 py-1.5 text-[10px] font-black transition-all ${
                       selectedAges.includes(age.code)
-                        ? 'bg-brand-500 text-white shadow-md'
+                        ? 'bg-brand-500 text-white shadow-none'
                         : 'border border-brand-100 bg-white text-ink-soft hover:border-brand-300'
                     }`}
                   >
@@ -303,7 +303,7 @@ const ProductCreatePage: React.FC = () => {
               <p className="text-xs font-black text-lavender-500">موجودی اولیه هر سایز</p>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {selectedAges.map((code) => (
-                  <div key={code} className="rounded-2xl border border-lavender-100 bg-white p-3">
+                  <div key={code} className="rounded-none border border-lavender-100 bg-white p-3">
                     <label htmlFor={`stock-${code}`} className="mb-1.5 block text-[11px] font-bold text-ink-soft">
                       {AGE_RANGES.find((option) => option.code === code)?.label}
                     </label>
@@ -341,7 +341,7 @@ const ProductCreatePage: React.FC = () => {
             <p className="mb-2 text-xs font-bold text-ink-soft">📸 تصاویر محصول (حداکثر {MAX_IMAGES} تصویر)</p>
             <div className="grid grid-cols-3 gap-3 rounded-[1.5rem] border-2 border-dashed border-brand-100 p-4 sm:grid-cols-6">
               {previews.map((src, index) => (
-                <div key={src} className="relative aspect-square overflow-hidden rounded-2xl border border-brand-50">
+                <div key={src} className="relative aspect-square overflow-hidden rounded-none border border-brand-50">
                   <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" />
                   <button
                     type="button"
@@ -355,7 +355,7 @@ const ProductCreatePage: React.FC = () => {
               ))}
 
               {images.length < MAX_IMAGES && (
-                <label className="grid aspect-square cursor-pointer place-items-center rounded-2xl border-2 border-dashed border-brand-200 bg-white text-brand-400 transition-colors hover:border-brand-400 hover:bg-brand-50">
+                <label className="grid aspect-square cursor-pointer place-items-center rounded-none border-2 border-dashed border-brand-200 bg-white text-brand-400 transition-colors hover:border-brand-400 hover:bg-brand-50">
                   <span className="text-center">
                     <Camera className="mx-auto" size={24} aria-hidden="true" />
                     <span className="mt-1 block text-[10px] font-black">افزودن</span>

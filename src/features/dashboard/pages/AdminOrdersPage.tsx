@@ -104,7 +104,7 @@ const AdminOrdersPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#FFFAFB] text-right">
       <div className="container-shop py-8">
-        <header className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-[2rem] border border-brand-50 bg-white p-6 shadow-card">
+        <header className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-none border border-brand-50 bg-white p-6 shadow-none">
           <h1 className="flex items-center gap-2 text-lg font-black text-ink">
             <Package className="text-lavender-500" size={22} aria-hidden="true" /> مدیریت سفارش‌ها
           </h1>
@@ -113,20 +113,20 @@ const AdminOrdersPage: React.FC = () => {
             <button
               type="button"
               onClick={loadData}
-              className="flex items-center gap-2 rounded-xl bg-brand-50 px-4 py-2 text-xs font-bold text-brand-600 transition-colors hover:bg-brand-100"
+              className="flex items-center gap-2 rounded-none bg-brand-50 px-4 py-2 text-xs font-bold text-brand-600 transition-colors hover:bg-brand-100"
             >
               <RefreshCw size={14} className={loading ? 'animate-spin' : ''} aria-hidden="true" /> بروزرسانی
             </button>
             <Link
               to="/dashboard"
-              className="rounded-xl px-3 py-2 text-xs font-bold text-ink-soft transition-colors hover:bg-brand-50"
+              className="rounded-none px-3 py-2 text-xs font-bold text-ink-soft transition-colors hover:bg-brand-50"
             >
               ← حساب کاربری
             </Link>
           </div>
         </header>
 
-        <div className="overflow-hidden rounded-[2rem] border border-brand-50 bg-white shadow-card">
+        <div className="overflow-hidden rounded-none border border-brand-50 bg-white shadow-none">
           <div className="overflow-x-auto">
             <table className="w-full text-right">
               <thead>
@@ -190,7 +190,7 @@ const AdminOrdersPage: React.FC = () => {
                         id={`status-${order.id}`}
                         value=""
                         onChange={(event) => handleStatusChange(order.id, event.target.value)}
-                        className="w-full cursor-pointer rounded-xl border border-brand-100 bg-white p-2 text-[11px] font-bold text-ink-soft outline-none focus:border-brand-300"
+                        className="w-full cursor-pointer rounded-none border border-brand-100 bg-white p-2 text-[11px] font-bold text-ink-soft outline-none focus:border-brand-300"
                       >
                         <option value="">انتخاب کنید…</option>
                         <option value="Paid">پرداخت شده ✅</option>
@@ -214,7 +214,7 @@ const AdminOrdersPage: React.FC = () => {
             role="dialog"
             aria-modal="true"
             aria-labelledby="delivery-modal-title"
-            className="w-full max-w-md rounded-[2rem] bg-white p-6 shadow-2xl animate-fade-in-up"
+            className="w-full max-w-md rounded-none bg-white p-6 shadow-none animate-fade-in-up"
           >
             <div className="mb-5 flex items-center justify-between border-b border-brand-50 pb-4">
               <h2 id="delivery-modal-title" className="flex items-center gap-2 text-sm font-black text-ink">

@@ -43,7 +43,7 @@ const CartPage: React.FC = () => {
         </div>
 
         {cartItems.length === 0 ? (
-          <div className="rounded-[2rem] border-2 border-dashed border-brand-100 bg-white py-20 text-center">
+          <div className="rounded-none border-2 border-dashed border-brand-100 bg-white py-20 text-center">
             <p className="text-5xl" aria-hidden="true">
               🎈
             </p>
@@ -59,7 +59,7 @@ const CartPage: React.FC = () => {
               {cartItems.map((item) => (
                 <li
                   key={item.lineId}
-                  className="flex flex-col gap-4 rounded-[2rem] border border-brand-50 bg-white p-4 shadow-card sm:flex-row sm:items-center"
+                  className="flex flex-col gap-4 rounded-none border border-brand-50 bg-white p-4 shadow-none sm:flex-row sm:items-center"
                 >
                   <Link to={`/product/${item.id}`} className="shrink-0">
                     <img
@@ -69,7 +69,7 @@ const CartPage: React.FC = () => {
                       height={96}
                       loading="lazy"
                       decoding="async"
-                      className="h-24 w-24 rounded-2xl object-cover"
+                      className="h-24 w-24 rounded-none object-cover"
                       onError={(event) => {
                         const image = event.currentTarget;
                         if (image.dataset.fallbackApplied === 'true') return;
@@ -85,7 +85,7 @@ const CartPage: React.FC = () => {
                     </Link>
 
                     {item.sizeName && (
-                      <p className="mt-1 inline-block rounded-lg bg-brand-50 px-2 py-0.5 text-[11px] font-bold text-brand-600">
+                      <p className="mt-1 inline-block rounded-none bg-brand-50 px-2 py-0.5 text-[11px] font-bold text-brand-600">
                         سایز: {item.sizeName}
                       </p>
                     )}
@@ -97,12 +97,12 @@ const CartPage: React.FC = () => {
                   </div>
 
                   <div className="flex items-center justify-between gap-4 sm:flex-col sm:items-end">
-                    <div className="flex items-center gap-1 rounded-2xl bg-brand-50 p-1">
+                    <div className="flex items-center gap-1 rounded-none bg-brand-50 p-1">
                       <button
                         type="button"
                         onClick={() => handleIncrease(item.lineId)}
                         aria-label="افزایش تعداد"
-                        className="grid h-8 w-8 place-items-center rounded-xl bg-white text-emerald-600 shadow-sm transition-transform active:scale-90"
+                        className="grid h-8 w-8 place-items-center rounded-none bg-white text-emerald-600 shadow-none transition-transform active:scale-90"
                       >
                         <Plus size={16} aria-hidden="true" />
                       </button>
@@ -115,7 +115,7 @@ const CartPage: React.FC = () => {
                         type="button"
                         onClick={() => decreaseQuantity(item.lineId)}
                         aria-label="کاهش تعداد"
-                        className="grid h-8 w-8 place-items-center rounded-xl bg-white text-brand-600 shadow-sm transition-transform active:scale-90"
+                        className="grid h-8 w-8 place-items-center rounded-none bg-white text-brand-600 shadow-none transition-transform active:scale-90"
                       >
                         <Minus size={16} aria-hidden="true" />
                       </button>
@@ -125,7 +125,7 @@ const CartPage: React.FC = () => {
                       type="button"
                       onClick={() => removeFromCart(item.lineId)}
                       aria-label={`حذف ${item.name} از سبد`}
-                      className="grid h-8 w-8 place-items-center rounded-xl text-ink-light transition-colors hover:bg-red-50 hover:text-red-500"
+                      className="grid h-8 w-8 place-items-center rounded-none text-ink-light transition-colors hover:bg-red-50 hover:text-red-500"
                     >
                       <Trash2 size={16} aria-hidden="true" />
                     </button>
@@ -135,7 +135,7 @@ const CartPage: React.FC = () => {
             </ul>
 
             {/* خلاصه سفارش */}
-            <aside className="h-fit rounded-[2rem] border border-brand-100 bg-white p-6 shadow-card lg:sticky lg:top-24">
+            <aside className="h-fit rounded-none border border-brand-100 bg-white p-6 shadow-none lg:sticky lg:top-24">
               <h2 className="text-sm font-black text-ink">خلاصه سفارش</h2>
 
               <dl className="mt-5 space-y-3 text-xs">

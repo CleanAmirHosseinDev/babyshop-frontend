@@ -107,7 +107,7 @@ const OrderDetailsPage: React.FC = () => {
       <StoreHeader backTo="/dashboard" backLabel="حساب کاربری" />
 
       <main className="container-shop py-8">
-        <header className="mb-6 rounded-[2rem] border border-brand-50 bg-white p-6 shadow-card">
+        <header className="mb-6 rounded-none border border-brand-50 bg-white p-6 shadow-none">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h1 className="text-lg font-black text-ink">
@@ -124,7 +124,7 @@ const OrderDetailsPage: React.FC = () => {
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
             {status === 'shipped' && (
-              <section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-l from-lavender-500 to-lavender-400 p-6 text-white shadow-xl">
+              <section className="relative overflow-hidden rounded-none bg-gradient-to-l from-lavender-500 to-lavender-400 p-6 text-white shadow-none">
                 <Truck className="absolute -left-4 -top-4 opacity-20" size={120} aria-hidden="true" />
 
                 <div className="relative">
@@ -138,7 +138,7 @@ const OrderDetailsPage: React.FC = () => {
                         تحویل به <span className="font-bold">{delivery.carrier || 'اداره پست'}</span>
                       </p>
 
-                      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white/20 p-4 backdrop-blur">
+                      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-none bg-white/20 p-4 backdrop-blur">
                         <div>
                           <p className="text-[10px] text-white/80">کد رهگیری / بارنامه</p>
                           <p className="font-mono text-base font-bold tracking-widest" dir="ltr">
@@ -149,7 +149,7 @@ const OrderDetailsPage: React.FC = () => {
                         <button
                           type="button"
                           onClick={copyTrackingNumber}
-                          className="flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-xs font-bold text-lavender-500"
+                          className="flex items-center gap-2 rounded-none bg-white px-4 py-2 text-xs font-bold text-lavender-500"
                         >
                           {copied ? (
                             <>
@@ -168,7 +168,7 @@ const OrderDetailsPage: React.FC = () => {
               </section>
             )}
 
-            <section className="rounded-[2rem] border border-brand-50 bg-white p-6 shadow-card">
+            <section className="rounded-none border border-brand-50 bg-white p-6 shadow-none">
               <h2 className="mb-5 flex items-center gap-2 border-r-4 border-brand-500 pr-3 text-sm font-black text-ink">
                 <Package size={16} aria-hidden="true" /> اقلام سفارش
               </h2>
@@ -179,7 +179,7 @@ const OrderDetailsPage: React.FC = () => {
                 {items.map((item, index) => (
                   <li
                     key={item.id ?? `${item.productName}-${index}`}
-                    className="flex items-center justify-between gap-3 rounded-2xl bg-brand-50/40 p-4"
+                    className="flex items-center justify-between gap-3 rounded-none bg-brand-50/40 p-4"
                   >
                     <div>
                       <p className="text-sm font-bold text-ink">{item.productName}</p>
@@ -196,19 +196,19 @@ const OrderDetailsPage: React.FC = () => {
           </div>
 
           <div className="space-y-6">
-            <section className="rounded-[2rem] border border-brand-50 bg-white p-6 shadow-card">
+            <section className="rounded-none border border-brand-50 bg-white p-6 shadow-none">
               <h2 className="mb-3 text-sm font-black text-ink">📍 آدرس تحویل</h2>
               <p className="text-xs leading-7 text-ink-soft">{order.shippingAddress || 'ثبت نشده'}</p>
             </section>
 
             {order.customerNote && (
-              <section className="rounded-[2rem] border border-brand-50 bg-white p-6 shadow-card">
+              <section className="rounded-none border border-brand-50 bg-white p-6 shadow-none">
                 <h2 className="mb-3 text-sm font-black text-ink">📝 توضیحات سفارش</h2>
                 <p className="text-xs leading-7 text-ink-soft">{order.customerNote}</p>
               </section>
             )}
 
-            <section className="rounded-[2rem] border border-brand-100 bg-white p-6 shadow-card">
+            <section className="rounded-none border border-brand-100 bg-white p-6 shadow-none">
               <dl className="space-y-3 text-xs">
                 <div className="flex items-center justify-between text-ink-soft">
                   <dt>جمع اقلام</dt>

@@ -117,7 +117,7 @@ const DashboardPage: React.FC = () => {
         <div className="grid gap-6 md:grid-cols-4">
           {/* منوی کنار */}
           <aside className="space-y-4 md:col-span-1">
-            <div className="rounded-[2rem] border border-brand-50 bg-white p-6 text-center shadow-card">
+            <div className="rounded-none border border-brand-50 bg-white p-6 text-center shadow-none">
               <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-brand-50 text-3xl" aria-hidden="true">
                 👤
               </span>
@@ -134,7 +134,7 @@ const DashboardPage: React.FC = () => {
               )}
             </div>
 
-            <nav className="rounded-[2rem] border border-brand-50 bg-white p-2 shadow-card" aria-label="منوی حساب کاربری">
+            <nav className="rounded-none border border-brand-50 bg-white p-2 shadow-none" aria-label="منوی حساب کاربری">
               {TABS.map((tab) => {
                 const badgeCount =
                   tab.id === 'wishlist' ? wishlist.length : tab.id === 'tickets' && !isAdmin ? answeredTickets : 0;
@@ -145,9 +145,9 @@ const DashboardPage: React.FC = () => {
                     type="button"
                     onClick={() => setActiveTab(tab.id)}
                     aria-current={activeTab === tab.id}
-                    className={`mb-1 flex w-full items-center justify-between rounded-2xl px-4 py-3.5 text-xs font-bold transition-all ${
+                    className={`mb-1 flex w-full items-center justify-between rounded-none px-4 py-3.5 text-xs font-bold transition-all ${
                       activeTab === tab.id
-                        ? 'bg-brand-500 text-white shadow-lg shadow-brand-200'
+                        ? 'bg-brand-500 text-white shadow-none shadow-brand-200'
                         : 'text-ink-soft hover:bg-brand-50'
                     }`}
                   >
@@ -175,7 +175,7 @@ const DashboardPage: React.FC = () => {
                   {isAdmin && (
                     <Link
                       to="/admin/orders"
-                      className="block rounded-2xl px-4 py-3 text-xs font-bold text-lavender-500 transition-colors hover:bg-lavender-50"
+                      className="block rounded-none px-4 py-3 text-xs font-bold text-lavender-500 transition-colors hover:bg-lavender-50"
                     >
                       🛒 سفارش‌ها
                     </Link>
@@ -183,7 +183,7 @@ const DashboardPage: React.FC = () => {
 
                   <Link
                     to="/admin/tickets"
-                    className="flex items-center justify-between rounded-2xl px-4 py-3 text-xs font-bold text-lavender-500 transition-colors hover:bg-lavender-50"
+                    className="flex items-center justify-between rounded-none px-4 py-3 text-xs font-bold text-lavender-500 transition-colors hover:bg-lavender-50"
                   >
                     🎧 پیام‌های مشتریان
                     {openAdminTickets > 0 && (
@@ -195,19 +195,19 @@ const DashboardPage: React.FC = () => {
 
                   <Link
                     to="/admin/inventory"
-                    className="block rounded-2xl px-4 py-3 text-xs font-bold text-lavender-500 transition-colors hover:bg-lavender-50"
+                    className="block rounded-none px-4 py-3 text-xs font-bold text-lavender-500 transition-colors hover:bg-lavender-50"
                   >
                     📦 موجودی انبار
                   </Link>
                   <Link
                     to="/admin/categories"
-                    className="block rounded-2xl px-4 py-3 text-xs font-bold text-lavender-500 transition-colors hover:bg-lavender-50"
+                    className="block rounded-none px-4 py-3 text-xs font-bold text-lavender-500 transition-colors hover:bg-lavender-50"
                   >
                     🏷️ دسته‌بندی‌ها
                   </Link>
                   <Link
                     to="/products"
-                    className="block rounded-2xl px-4 py-3 text-xs font-bold text-lavender-500 transition-colors hover:bg-lavender-50"
+                    className="block rounded-none px-4 py-3 text-xs font-bold text-lavender-500 transition-colors hover:bg-lavender-50"
                   >
                     🛍️ لیست محصولات
                   </Link>
@@ -217,7 +217,7 @@ const DashboardPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="mt-3 flex w-full items-center gap-2 rounded-2xl px-4 py-3.5 text-xs font-bold text-red-500 transition-colors hover:bg-red-50"
+                className="mt-3 flex w-full items-center gap-2 rounded-none px-4 py-3.5 text-xs font-bold text-red-500 transition-colors hover:bg-red-50"
               >
                 <LogOut size={16} aria-hidden="true" /> خروج از حساب
               </button>
@@ -225,7 +225,7 @@ const DashboardPage: React.FC = () => {
           </aside>
 
           {/* محتوا */}
-          <section className="rounded-[2rem] border border-brand-50 bg-white p-6 shadow-card md:col-span-3 md:p-8">
+          <section className="rounded-none border border-brand-50 bg-white p-6 shadow-none md:col-span-3 md:p-8">
             {activeTab === 'orders' && (
               <>
                 <h2 className="mb-6 border-r-4 border-brand-500 pr-3 text-sm font-black text-ink">سفارش‌های اخیر</h2>
@@ -249,7 +249,7 @@ const DashboardPage: React.FC = () => {
                         <li key={order.id}>
                           <Link
                             to={`/dashboard/order/${order.id}`}
-                            className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-brand-50 p-4 transition-all hover:border-brand-200 hover:shadow-md"
+                            className="flex flex-wrap items-center justify-between gap-3 rounded-none border border-brand-50 p-4 transition-all hover:border-brand-200 hover:shadow-none"
                           >
                             <div>
                               <p className="text-sm font-black text-ink">سفارش #{order.orderNumber ?? order.id}</p>
@@ -282,7 +282,7 @@ const DashboardPage: React.FC = () => {
                     {wishlist.map((item) => (
                       <li
                         key={item.id}
-                        className="flex items-center gap-3 rounded-2xl border border-brand-50 p-3 transition-shadow hover:shadow-md"
+                        className="flex items-center gap-3 rounded-none border border-brand-50 p-3 transition-shadow hover:shadow-none"
                       >
                         <img
                           src={getFirstImageUrl(item.imageUrl)}
@@ -291,7 +291,7 @@ const DashboardPage: React.FC = () => {
                           height={80}
                           loading="lazy"
                           decoding="async"
-                          className="h-20 w-20 shrink-0 rounded-xl object-cover"
+                          className="h-20 w-20 shrink-0 rounded-none object-cover"
                           onError={(event) => {
                             const image = event.currentTarget;
                             if (image.dataset.fallbackApplied === 'true') return;
@@ -305,7 +305,7 @@ const DashboardPage: React.FC = () => {
                         </div>
                         <Link
                           to={`/product/${item.id}`}
-                          className="rounded-xl bg-brand-50 px-3 py-2 text-[11px] font-bold text-brand-600 transition-colors hover:bg-brand-500 hover:text-white"
+                          className="rounded-none bg-brand-50 px-3 py-2 text-[11px] font-bold text-brand-600 transition-colors hover:bg-brand-500 hover:text-white"
                         >
                           مشاهده
                         </Link>
@@ -341,7 +341,7 @@ const DashboardPage: React.FC = () => {
                         <li key={ticket.id}>
                           <Link
                             to={`/dashboard/tickets/${ticket.id}`}
-                            className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-brand-50 p-4 transition-all hover:border-brand-200 hover:shadow-md"
+                            className="flex flex-wrap items-center justify-between gap-3 rounded-none border border-brand-50 p-4 transition-all hover:border-brand-200 hover:shadow-none"
                           >
                             <div>
                               <p className="text-sm font-bold text-ink">{ticket.subject}</p>

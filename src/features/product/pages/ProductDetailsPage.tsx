@@ -134,7 +134,7 @@ const ProductDetailsPage: React.FC = () => {
             <div className="h-6 w-2/3 rounded bg-brand-50" />
             <div className="h-4 rounded bg-brand-50" />
             <div className="h-4 w-5/6 rounded bg-brand-50" />
-            <div className="h-24 rounded-2xl bg-brand-50" />
+            <div className="h-24 rounded-none bg-brand-50" />
           </div>
         </div>
       </div>
@@ -170,8 +170,8 @@ const ProductDetailsPage: React.FC = () => {
       <main className="container-shop py-8">
         <div className="grid gap-8 md:grid-cols-2">
           {/* گالری */}
-          <div className="rounded-[2.5rem] border border-brand-50 bg-white p-5 shadow-card">
-            <div className="relative aspect-square overflow-hidden rounded-[2rem] bg-brand-50">
+          <div className="rounded-[2.5rem] border border-brand-50 bg-white p-5 shadow-none">
+            <div className="relative aspect-square overflow-hidden rounded-none bg-brand-50">
               <img
                 src={getImageUrl(mainImage)}
                 alt={product.name}
@@ -189,7 +189,7 @@ const ProductDetailsPage: React.FC = () => {
 
               {isCompletelyOutOfStock && (
                 <div className="absolute inset-0 grid place-items-center bg-ink/40 backdrop-blur-[2px]">
-                  <span className="rounded-full bg-red-500 px-6 py-2 text-sm font-black text-white shadow-xl">
+                  <span className="rounded-full bg-red-500 px-6 py-2 text-sm font-black text-white shadow-none">
                     فعلاً ناموجود
                   </span>
                 </div>
@@ -205,7 +205,7 @@ const ProductDetailsPage: React.FC = () => {
                     onClick={() => setMainImage(image)}
                     aria-label={`تصویر ${index + 1}`}
                     aria-pressed={mainImage === image}
-                    className={`h-20 w-20 shrink-0 overflow-hidden rounded-2xl border-2 transition-all ${
+                    className={`h-20 w-20 shrink-0 overflow-hidden rounded-none border-2 transition-all ${
                       mainImage === image ? 'border-brand-500' : 'border-transparent hover:border-brand-200'
                     }`}
                   >
@@ -223,7 +223,7 @@ const ProductDetailsPage: React.FC = () => {
           </div>
 
           {/* مشخصات */}
-          <div className="rounded-[2.5rem] border border-brand-50 bg-white p-6 shadow-card md:p-8">
+          <div className="rounded-[2.5rem] border border-brand-50 bg-white p-6 shadow-none md:p-8">
             <div className="flex items-start justify-between gap-3">
               <span className="rounded-full bg-brand-50 px-3 py-1 text-[11px] font-black text-brand-600">
                 محصول ویژه زیزی 🧸
@@ -255,7 +255,7 @@ const ProductDetailsPage: React.FC = () => {
                         type="button"
                         onClick={() => setSelectedSize(size)}
                         aria-pressed={selected}
-                        className={`rounded-2xl border-2 px-4 py-2.5 text-xs font-bold transition-all ${
+                        className={`rounded-none border-2 px-4 py-2.5 text-xs font-bold transition-all ${
                           selected
                             ? 'border-brand-500 bg-brand-50 text-brand-600'
                             : 'border-brand-50 text-ink-soft hover:border-brand-200'
@@ -270,7 +270,7 @@ const ProductDetailsPage: React.FC = () => {
               </div>
             )}
 
-            <div className="mt-6 rounded-3xl border border-brand-50 bg-brand-50/40 p-5">
+            <div className="mt-6 rounded-none border border-brand-50 bg-brand-50/40 p-5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-ink-soft">قیمت</span>
                 <p className="text-2xl font-black text-brand-600">
@@ -307,7 +307,7 @@ const ProductDetailsPage: React.FC = () => {
                 onClick={() => toggleWishlist(product)}
                 aria-pressed={isFavorite}
                 aria-label={isFavorite ? 'حذف از علاقه‌مندی‌ها' : 'افزودن به علاقه‌مندی‌ها'}
-                className={`grid w-14 shrink-0 place-items-center rounded-2xl border-2 transition-all ${
+                className={`grid w-14 shrink-0 place-items-center rounded-none border-2 transition-all ${
                   isFavorite
                     ? 'border-brand-200 bg-brand-50 text-brand-500'
                     : 'border-brand-100 text-ink-light hover:border-brand-300 hover:text-brand-500'

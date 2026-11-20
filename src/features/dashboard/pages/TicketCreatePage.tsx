@@ -57,16 +57,16 @@ const TicketCreatePage: React.FC = () => {
       <StoreHeader backTo="/dashboard" backLabel="حساب کاربری" />
 
       <main className="container-shop py-8">
-        <div className="mx-auto max-w-2xl rounded-[2rem] border border-brand-50 bg-white p-6 shadow-card sm:p-8">
+        <div className="mx-auto max-w-2xl rounded-none border border-brand-50 bg-white p-6 shadow-none sm:p-8">
           <h1 className="flex items-center gap-2 text-lg font-black text-ink">
-            <span className="grid h-10 w-10 place-items-center rounded-2xl bg-brand-50 text-brand-500">
+            <span className="grid h-10 w-10 place-items-center rounded-none bg-brand-50 text-brand-500">
               <Send size={20} aria-hidden="true" />
             </span>
             ارسال پیام به پشتیبانی
           </h1>
 
           {feedback && (
-            <div role="alert" className="mt-5 rounded-2xl border border-red-100 bg-red-50 p-3 text-xs font-bold text-red-600">
+            <div role="alert" className="mt-5 rounded-none border border-red-100 bg-red-50 p-3 text-xs font-bold text-red-600">
               {feedback}
             </div>
           )}

@@ -1,46 +1,67 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { BadgeCheck, RefreshCw, ShieldCheck, Truck } from 'lucide-react';
 
-const features = [
-  { icon: Truck, title: 'ارسال سریع', description: 'پست پیشتاز به سراسر کشور' },
-  { icon: ShieldCheck, title: 'پرداخت امن', description: 'از طریق درگاه‌های بانکی' },
-  { icon: RefreshCw, title: '۷ روز ضمانت بازگشت', description: 'در صورت عدم رضایت' },
-  { icon: BadgeCheck, title: 'تضمین کیفیت', description: 'پارچه‌های مناسب پوست کودک' },
+const COLUMNS = [
+  {
+    title: 'خرید',
+    links: [
+      { label: 'همه محصولات', to: '/' },
+      { label: 'نوزاد', to: '/?gender=1' },
+      { label: 'دخترانه', to: '/?gender=2' },
+      { label: 'پسرانه', to: '/?gender=3' },
+    ],
+  },
+  {
+    title: 'حساب کاربری',
+    links: [
+      { label: 'ورود / ثبت‌نام', to: '/login' },
+      { label: 'سفارش‌های من', to: '/dashboard' },
+      { label: 'سبد خرید', to: '/cart' },
+    ],
+  },
+  {
+    title: 'پشتیبانی',
+    links: [
+      { label: 'ثبت تیکت جدید', to: '/dashboard/tickets/create' },
+      { label: 'پیگیری سفارش', to: '/dashboard' },
+      { label: 'وضعیت ارسال', to: '/dashboard' },
+    ],
+  },
+  {
+    title: 'زیزی کیدز',
+    links: [
+      { label: 'درباره ما', to: '/' },
+      { label: 'شرایط بازگشت کالا', to: '/' },
+      { label: 'حریم خصوصی', to: '/' },
+    ],
+  },
 ];
 
-/** پاورقی یکسان تمام صفحات فروشگاه */
+/** پاورقی مینیمال فروشگاه با ستون‌های لینک و نوار حقوقی */
 const StoreFooter: React.FC = () => {
   return (
-    <footer className="mt-20 border-t border-brand-100 bg-white">
-      <div className="container-shop grid grid-cols-2 gap-6 py-10 md:grid-cols-4">
-        {features.map(({ icon: Icon, title, description }) => (
-          <div key={title} className="flex items-start gap-3">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-brand-50 text-brand-500">
-              <Icon size={20} aria-hidden="true" />
-            </span>
-            <div>
-              <p className="text-sm font-bold text-ink">{title}</p>
-              <p className="mt-0.5 text-xs text-ink-light">{description}</p>
-            </div>
-          </div>
+    <footer className="mt-16 border-t border-line bg-white">
+      <div className="container-shop grid grid-cols-2 gap-8 py-12 md:grid-cols-4">
+        {COLUMNS.map((column) => (
+          <nav key={column.title} aria-label={column.title}>
+            <h2 className="mb-4 text-[10px] uppercase tracking-label text-ink">{column.title}</h2>
+            <ul className="space-y-2.5">
+              {column.links.map((link) => (
+                <li key={`${column.title}-${link.label}`}>
+                  <Link to={link.to} className="text-[12px] font-light text-ink-soft hover:text-ink">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
         ))}
       </div>
 
-      <div className="border-t border-brand-50">
-        <div className="container-shop flex flex-col items-center justify-between gap-3 py-5 text-xs text-ink-light sm:flex-row">
-          <p>© {new Date().getFullYear()} زیزی کیدز — تمامی حقوق محفوظ است.</p>
-          <nav className="flex items-center gap-4">
-            <Link to="/" className="transition-colors hover:text-brand-600">
-              خانه
-            </Link>
-            <Link to="/cart" className="transition-colors hover:text-brand-600">
-              سبد خرید
-            </Link>
-            <Link to="/dashboard/tickets/create" className="transition-colors hover:text-brand-600">
-              پشتیبانی
-            </Link>
-          </nav>
+      <div className="border-t border-line">
+        <div className="container-shop flex flex-col items-center justify-between gap-3 py-5 text-[10px] uppercase tracking-label text-ink-light sm:flex-row">
+          <p>© {new Date().getFullYear()} ZIIZII KIDS — تمامی حقوق محفوظ است.</p>
+          <p>ایران / فارسی</p>
         </div>
       </div>
     </footer>

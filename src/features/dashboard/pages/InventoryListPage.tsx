@@ -58,7 +58,7 @@ const InventoryListPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#FFFAFB] text-right">
       <div className="container-shop py-8">
-        <header className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-[2rem] border border-brand-50 bg-white p-6 shadow-card">
+        <header className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-none border border-brand-50 bg-white p-6 shadow-none">
           <h1 className="flex items-center gap-2 text-lg font-black text-ink">
             <Package className="text-lavender-500" size={22} aria-hidden="true" /> مدیریت موجودی انبار
           </h1>
@@ -72,14 +72,14 @@ const InventoryListPage: React.FC = () => {
             </Link>
             <Link
               to="/dashboard"
-              className="rounded-xl px-3 py-2 text-xs font-bold text-ink-soft transition-colors hover:bg-brand-50"
+              className="rounded-none px-3 py-2 text-xs font-bold text-ink-soft transition-colors hover:bg-brand-50"
             >
               ← حساب کاربری
             </Link>
           </div>
         </header>
 
-        <div className="overflow-hidden rounded-[2rem] border border-brand-50 bg-white shadow-card">
+        <div className="overflow-hidden rounded-none border border-brand-50 bg-white shadow-none">
           <div className="overflow-x-auto">
             <table className="w-full text-right">
               <thead>
@@ -122,7 +122,7 @@ const InventoryListPage: React.FC = () => {
                           type="button"
                           onClick={() => handleStockChange(item, 'increase')}
                           aria-label="افزایش موجودی"
-                          className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-500 text-white transition-colors hover:bg-emerald-600"
+                          className="grid h-8 w-8 place-items-center rounded-none bg-emerald-500 text-white transition-colors hover:bg-emerald-600"
                         >
                           <Plus size={16} aria-hidden="true" />
                         </button>
@@ -132,7 +132,7 @@ const InventoryListPage: React.FC = () => {
                           onClick={() => handleStockChange(item, 'decrease')}
                           disabled={item.currentStock <= 0}
                           aria-label="کاهش موجودی"
-                          className="grid h-8 w-8 place-items-center rounded-lg bg-amber-500 text-white transition-colors hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-40"
+                          className="grid h-8 w-8 place-items-center rounded-none bg-amber-500 text-white transition-colors hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           <Minus size={16} aria-hidden="true" />
                         </button>
@@ -141,7 +141,7 @@ const InventoryListPage: React.FC = () => {
                           type="button"
                           onClick={() => handleDelete(item.id)}
                           aria-label="حذف از انبار"
-                          className="grid h-8 w-8 place-items-center rounded-lg border border-red-100 bg-red-50 text-red-500 transition-colors hover:bg-red-500 hover:text-white"
+                          className="grid h-8 w-8 place-items-center rounded-none border border-red-100 bg-red-50 text-red-500 transition-colors hover:bg-red-500 hover:text-white"
                         >
                           <Trash2 size={16} aria-hidden="true" />
                         </button>

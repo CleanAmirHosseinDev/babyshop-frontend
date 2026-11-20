@@ -100,7 +100,7 @@ const CategoryListPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#FFFAFB] text-right">
       <div className="container-shop py-8">
-        <header className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-[2rem] border border-brand-50 bg-white p-6 shadow-card">
+        <header className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-none border border-brand-50 bg-white p-6 shadow-none">
           <h1 className="flex items-center gap-2 text-lg font-black text-ink">
             <Layers className="text-lavender-500" size={22} aria-hidden="true" /> مدیریت دسته‌بندی‌ها
           </h1>
@@ -111,14 +111,14 @@ const CategoryListPage: React.FC = () => {
             </button>
             <Link
               to="/dashboard"
-              className="rounded-xl px-3 py-2 text-xs font-bold text-ink-soft transition-colors hover:bg-brand-50"
+              className="rounded-none px-3 py-2 text-xs font-bold text-ink-soft transition-colors hover:bg-brand-50"
             >
               ← حساب کاربری
             </Link>
           </div>
         </header>
 
-        <div className="overflow-hidden rounded-[2rem] border border-brand-50 bg-white shadow-card">
+        <div className="overflow-hidden rounded-none border border-brand-50 bg-white shadow-none">
           <div className="overflow-x-auto">
             <table className="w-full text-right">
               <thead>
@@ -174,7 +174,7 @@ const CategoryListPage: React.FC = () => {
                           type="button"
                           onClick={() => openEdit(category)}
                           aria-label={`ویرایش ${category.name}`}
-                          className="grid h-8 w-8 place-items-center rounded-lg bg-lavender-50 text-lavender-500 transition-colors hover:bg-lavender-500 hover:text-white"
+                          className="grid h-8 w-8 place-items-center rounded-none bg-lavender-50 text-lavender-500 transition-colors hover:bg-lavender-500 hover:text-white"
                         >
                           <Pencil size={15} aria-hidden="true" />
                         </button>
@@ -184,7 +184,7 @@ const CategoryListPage: React.FC = () => {
                             type="button"
                             onClick={() => remove(category)}
                             aria-label={`حذف ${category.name}`}
-                            className="grid h-8 w-8 place-items-center rounded-lg bg-red-50 text-red-500 transition-colors hover:bg-red-500 hover:text-white"
+                            className="grid h-8 w-8 place-items-center rounded-none bg-red-50 text-red-500 transition-colors hover:bg-red-500 hover:text-white"
                           >
                             <Trash2 size={15} aria-hidden="true" />
                           </button>
@@ -210,7 +210,7 @@ const CategoryListPage: React.FC = () => {
             role="dialog"
             aria-modal="true"
             aria-labelledby="category-modal-title"
-            className="w-full max-w-md rounded-[2rem] bg-white p-6 shadow-2xl animate-fade-in-up"
+            className="w-full max-w-md rounded-none bg-white p-6 shadow-none animate-fade-in-up"
           >
             <div className="mb-5 flex items-center justify-between border-b border-brand-50 pb-4">
               <h2 id="category-modal-title" className="flex items-center gap-2 text-sm font-black text-ink">

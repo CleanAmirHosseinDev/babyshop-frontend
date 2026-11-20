@@ -45,7 +45,7 @@ const PaymentResultPage: React.FC = () => {
       <StoreHeader />
 
       <main className="container-shop grid min-h-[55vh] place-items-center py-12">
-        <div className="w-full max-w-md rounded-[2rem] border border-brand-100 bg-white p-8 text-center shadow-card">
+        <div className="w-full max-w-md rounded-none border border-brand-100 bg-white p-8 text-center shadow-none">
           {status === 'loading' && (
             <>
               <Loader2 className="mx-auto animate-spin text-brand-500" size={44} aria-hidden="true" />

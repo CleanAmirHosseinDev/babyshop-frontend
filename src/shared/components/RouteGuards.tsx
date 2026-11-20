@@ -10,14 +10,14 @@ interface GuardProps {
 function Forbidden({ title, message }: { title: string; message: string }) {
   return (
     <div className="container-shop flex min-h-[60vh] flex-col items-center justify-center text-center">
-      <span className="grid h-16 w-16 place-items-center rounded-3xl bg-red-50 text-red-500">
+      <span className="grid h-16 w-16 place-items-center rounded-none bg-red-50 text-red-500">
         <ShieldAlert size={32} aria-hidden="true" />
       </span>
       <h1 className="mt-5 text-xl font-black text-ink">{title}</h1>
       <p className="mt-2 max-w-sm text-sm leading-7 text-ink-soft">{message}</p>
       <Link
         to="/"
-        className="mt-6 rounded-2xl bg-brand-500 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-brand-200 transition-colors hover:bg-brand-600"
+        className="mt-6 rounded-none bg-brand-500 px-6 py-3 text-sm font-bold text-white shadow-none shadow-brand-200 transition-colors hover:bg-brand-600"
       >
         بازگشت به فروشگاه
       </Link>

@@ -70,19 +70,19 @@ const AdminTicketsPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#FFFAFB] text-right">
       <div className="container-shop py-8">
-        <header className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-[2rem] border border-brand-50 bg-white p-6 shadow-card">
+        <header className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-none border border-brand-50 bg-white p-6 shadow-none">
           <h1 className="flex items-center gap-2 text-lg font-black text-ink">
             <MessageSquare className="text-lavender-500" size={22} aria-hidden="true" /> پیام‌های مشتریان
           </h1>
           <Link
             to="/dashboard"
-            className="rounded-xl bg-brand-50 px-4 py-2 text-xs font-bold text-brand-600 transition-colors hover:bg-brand-100"
+            className="rounded-none bg-brand-50 px-4 py-2 text-xs font-bold text-brand-600 transition-colors hover:bg-brand-100"
           >
             ← حساب کاربری
           </Link>
         </header>
 
-        <div className="overflow-hidden rounded-[2rem] border border-brand-50 bg-white shadow-card">
+        <div className="overflow-hidden rounded-none border border-brand-50 bg-white shadow-none">
           <div className="overflow-x-auto">
             <table className="w-full text-right">
               <thead>
@@ -145,7 +145,7 @@ const AdminTicketsPage: React.FC = () => {
                           id={`ticket-status-${ticket.id}`}
                           value={STATUS_OPTIONS.find((option) => option.value === ticket.status)?.value ?? ''}
                           onChange={(event) => handleStatusChange(ticket.id, event.target.value)}
-                          className="w-full cursor-pointer rounded-xl border border-brand-100 bg-white p-2 text-[11px] font-bold text-ink-soft outline-none focus:border-brand-300"
+                          className="w-full cursor-pointer rounded-none border border-brand-100 bg-white p-2 text-[11px] font-bold text-ink-soft outline-none focus:border-brand-300"
                         >
                           {!STATUS_OPTIONS.some((option) => option.value === ticket.status) && (
                             <option value="">{ticket.status}</option>
@@ -162,7 +162,7 @@ const AdminTicketsPage: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => navigate(`/dashboard/tickets/${ticket.id}`)}
-                          className={`rounded-xl px-4 py-2 text-[11px] font-black transition-all ${
+                          className={`rounded-none px-4 py-2 text-[11px] font-black transition-all ${
                             isOpen
                               ? 'bg-red-500 text-white hover:bg-red-600'
                               : 'bg-lavender-50 text-lavender-500 hover:bg-lavender-100'

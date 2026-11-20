@@ -92,7 +92,7 @@ const TicketDetailsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#FFFAFB] p-4 text-right">
-      <div className="mx-auto flex h-[85vh] max-w-3xl flex-col overflow-hidden rounded-[2rem] border border-brand-100 bg-white shadow-2xl">
+      <div className="mx-auto flex h-[85vh] max-w-3xl flex-col overflow-hidden rounded-none border border-brand-100 bg-white shadow-none">
         <header className="flex items-center justify-between gap-3 bg-brand-500 px-5 py-4 text-white">
           <Link
             to="/dashboard"
@@ -121,7 +121,7 @@ const TicketDetailsPage: React.FC = () => {
           {replies.map((reply) => (
             <div key={reply.id} className={`flex ${reply.isAdminReply ? 'justify-start' : 'justify-end'}`}>
               <div
-                className={`max-w-[85%] rounded-3xl px-4 py-3 text-xs leading-7 shadow-sm ${
+                className={`max-w-[85%] rounded-none px-4 py-3 text-xs leading-7 shadow-none ${
                   reply.isAdminReply
                     ? 'bg-lavender-500 text-white'
                     : 'border border-brand-100 bg-white text-ink'
@@ -165,7 +165,7 @@ const TicketDetailsPage: React.FC = () => {
               onClick={handleSendReply}
               disabled={!replyMessage.trim() || sending}
               aria-label="ارسال پاسخ"
-              className="btn-primary h-14 w-14 shrink-0 rounded-2xl p-0"
+              className="btn-primary h-14 w-14 shrink-0 rounded-none p-0"
             >
               <SendHorizontal size={20} aria-hidden="true" />
             </button>

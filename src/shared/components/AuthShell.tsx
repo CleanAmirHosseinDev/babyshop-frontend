@@ -22,9 +22,9 @@ const AuthShell: React.FC<AuthShellProps> = ({ title, subtitle, icon, children, 
           <ArrowRight size={14} aria-hidden="true" /> بازگشت به فروشگاه
         </Link>
 
-        <main className="rounded-[2rem] border border-brand-100 bg-white p-6 shadow-2xl shadow-brand-100/60 sm:p-8">
+        <main className="rounded-none border border-brand-100 bg-white p-6 shadow-none shadow-brand-100/60 sm:p-8">
           <div className="mb-6 text-center">
-            <span className="mx-auto grid h-16 w-16 place-items-center rounded-3xl bg-brand-50 text-3xl" aria-hidden="true">
+            <span className="mx-auto grid h-16 w-16 place-items-center rounded-none bg-brand-50 text-3xl" aria-hidden="true">
               {icon ?? '🧸'}
             </span>
             <h1 className="mt-4 text-xl font-black text-ink">{title}</h1>

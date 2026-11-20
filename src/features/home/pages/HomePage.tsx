@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Search, Sparkles } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Search } from 'lucide-react';
 import StoreHeader from '../../../shared/components/StoreHeader';
 import StoreFooter from '../../../shared/components/StoreFooter';
 import ProductCard from '../../product/components/ProductCard';
@@ -10,20 +11,31 @@ import { useWishlist } from '../../../shared/context/WishlistContext';
 import { formatNumber } from '../../../shared/utils/format';
 
 const GENDER_FILTERS = [
-  { id: 0, label: 'همه', emoji: '🌈' },
-  { id: 1, label: 'پسرانه', emoji: '👦' },
-  { id: 2, label: 'دخترانه', emoji: '👧' },
-] as const;
+  { value: 0, label: 'همه' },
+  { value: 1, label: 'پسرانه' },
+  { value: 2, label: 'دخترانه' },
+];
+
+const TILES = [
+  { src: '/images/tile-newborn.jpg', title: 'نوزاد', caption: '۰ تا ۲۴ ماه', gender: 3 },
+  { src: '/images/tile-girl.jpg', title: 'دخترانه', caption: 'کالکشن پاییز', gender: 2 },
+  { src: '/images/tile-boy.jpg', title: 'پسرانه', caption: 'کالکشن پاییز', gender: 1 },
+];
 
 const HomePage: React.FC = () => {
+  const [searchParams] = useSearchParams();
+
   const { products, loading: productsLoading, error, refresh } = useProducts();
   const { categories } = useCategories({ onlyActive: true });
   const { getAllInventory } = useInventory();
   const { toggleWishlist, isInWishlist } = useWishlist();
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [activeGender, setActiveGender] = useState<number>(0);
-  const [activeCategory, setActiveCategory] = useState<number | null>(null);
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('q') ?? '');
+  const [activeGender, setActiveGender] = useState<number>(() => Number(searchParams.get('gender') ?? 0) || 0);
+  const [activeCategory, setActiveCategory] = useState<number | null>(() => {
+    const value = Number(searchParams.get('category'));
+    return Number.isFinite(value) && value > 0 ? value : null;
+  });
   const [inventoryMap, setInventoryMap] = useState<Record<number, number>>({});
 
   // موجودی هر محصول = مجموع موجودی همه‌ی سایزها (تنها یک‌بار پس از mount)
@@ -56,7 +68,7 @@ const HomePage: React.FC = () => {
       if (product.isActive === false) return false;
 
       const matchesSearch = !term || product.name?.toLowerCase().includes(term);
-      // در بک‌اند: ۱ پسرانه، ۲ دخترانه، ۳ یونیسکس (هر دو) — محصولات یونیسکس در هر دو فیلتر دیده می‌شوند
+      // در بک‌اند: ۱ پسرانه، ۲ دخترانه، ۳ یونیسکس (هر دو)
       const matchesGender =
         activeGender === 0 || product.genderValue === activeGender || product.genderValue === 3;
       const matchesCategory = activeCategory === null || product.categoryId === activeCategory;
@@ -66,168 +78,156 @@ const HomePage: React.FC = () => {
   }, [products, searchTerm, activeGender, activeCategory]);
 
   return (
-    <div className="min-h-screen bg-[#FFFAFB] text-right">
+    <div className="min-h-screen bg-white text-right">
       <StoreHeader />
 
-      {/* بنر اصلی */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-brand-100 via-brand-50 to-lavender-100 px-4 pb-24 pt-14">
-        <div className="container-shop flex flex-col-reverse items-center justify-between gap-10 md:flex-row">
-          <div className="z-10 flex-1 text-center md:text-right">
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-1.5 text-xs font-bold text-brand-600 shadow-sm">
-              <Sparkles size={14} aria-hidden="true" />
-              کالکشن جدید نوزادی و کودک
-            </span>
-
-            <h1 className="mt-5 text-balance text-3xl font-black leading-[1.35] text-ink md:text-5xl">
-              دنیای لباس‌های
-              <span className="text-brand-500"> نرم و باکیفیت</span>
-              <br />
-              برای فرشته‌های کوچک شما
+      {/* هیرو */}
+      <section className="relative">
+        <img
+          src="/images/hero-kids.jpg"
+          alt="کالکشن نوزادی و کودک زیزی"
+          className="h-[62vh] min-h-[380px] w-full object-cover"
+          width={1600}
+          height={900}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 pb-10 md:pb-14">
+          <div className="container-shop">
+            <p className="text-[10px] uppercase tracking-editorial text-white/85">کالکشن جدید</p>
+            <h1 className="mt-3 text-2xl font-light text-white md:text-[40px] md:leading-tight">
+              نوزادی و کودک
             </h1>
-
-            <p className="mx-auto mt-4 max-w-md text-sm leading-7 text-ink-soft md:mx-0 md:text-base">
-              پارچه‌های ضدحساسیت، دوخت تمیز و سایزبندی دقیق؛ بهترین انتخاب برای خوش‌پوش‌ترین کوچولوی دنیا ✨
-            </p>
-
-            {/* دسته‌بندی‌ها */}
-            <div className="mt-8 flex flex-wrap justify-center gap-2 md:justify-start">
-              <button
-                type="button"
-                onClick={() => setActiveCategory(null)}
-                aria-pressed={activeCategory === null}
-                className={`rounded-full px-4 py-2 text-xs font-bold shadow-sm transition-all ${
-                  activeCategory === null
-                    ? 'bg-brand-500 text-white'
-                    : 'bg-white text-ink-soft hover:bg-brand-50'
-                }`}
-              >
-                🌟 همه قفسه‌ها
-              </button>
-
-              {categories.map((category) => (
-                <button
-                  key={category.id}
-                  type="button"
-                  onClick={() => setActiveCategory(category.id)}
-                  aria-pressed={activeCategory === category.id}
-                  className={`rounded-full px-4 py-2 text-xs font-bold shadow-sm transition-all ${
-                    activeCategory === category.id
-                      ? 'bg-brand-500 text-white'
-                      : 'bg-white text-ink-soft hover:bg-brand-50'
-                  }`}
-                >
-                  {category.name}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="relative flex flex-1 justify-center">
-            <div className="relative grid h-64 w-64 place-items-center rounded-full border-8 border-white/70 bg-white/50 shadow-2xl md:h-80 md:w-80">
-              <span className="text-[7rem] md:text-[9rem]" aria-hidden="true">
-                🧸
-              </span>
-              <span className="absolute -top-6 end-2 text-5xl animate-float md:text-6xl" aria-hidden="true">
-                🍼
-              </span>
-              <span className="absolute -bottom-4 start-0 text-5xl animate-bounce-slow md:text-6xl" aria-hidden="true">
-                👕
-              </span>
-            </div>
+            <a
+              href="#products"
+              className="mt-5 inline-block border-b border-white/80 pb-1 text-[11px] uppercase tracking-label text-white transition-opacity hover:opacity-70"
+            >
+              مشاهده کالکشن
+            </a>
           </div>
         </div>
       </section>
 
-      {/* جستجو و فیلتر جنسیت */}
-      <section className="container-shop relative z-20 -mt-14">
-        <div className="rounded-[2rem] border border-brand-100 bg-white p-4 shadow-xl shadow-brand-100/50">
-          <label htmlFor="product-search" className="sr-only">
-            جستجوی محصول
-          </label>
-          <div className="relative">
-            <Search
-              size={20}
-              aria-hidden="true"
-              className="pointer-events-none absolute start-5 top-1/2 -translate-y-1/2 text-ink-light"
+      {/* سه تایل دسته‌بندی */}
+      <section className="container-shop mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        {TILES.map((tile) => (
+          <button
+            key={tile.title}
+            type="button"
+            onClick={() => {
+              setActiveGender(tile.gender);
+              document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="group relative block overflow-hidden bg-brand-50 text-right"
+          >
+            <img
+              src={tile.src}
+              alt={tile.title}
+              loading="lazy"
+              className="aspect-[4/5] w-full object-cover transition-opacity duration-500 group-hover:opacity-90 sm:aspect-[3/4]"
+              width={600}
+              height={800}
             />
+            <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/45 to-transparent p-4">
+              <span className="block text-sm font-light text-white">{tile.title}</span>
+              <span className="mt-1 block text-[10px] uppercase tracking-label text-white/80">{tile.caption}</span>
+            </span>
+          </button>
+        ))}
+      </section>
+
+      {/* محصولات */}
+      <section id="products" className="container-shop mt-14 scroll-mt-16">
+        <div className="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-3">
+          <h2 className="text-[11px] uppercase tracking-label text-ink">
+            ویترین محصولات
+            <span className="ms-2 text-ink-light">({formatNumber(filteredProducts.length)})</span>
+          </h2>
+
+          <div className="flex flex-wrap items-center gap-4">
+            {GENDER_FILTERS.map((filter) => (
+              <button
+                key={filter.value}
+                type="button"
+                onClick={() => setActiveGender(filter.value)}
+                aria-pressed={activeGender === filter.value}
+                className={`text-[11px] uppercase tracking-label transition-colors ${
+                  activeGender === filter.value ? 'text-ink underline underline-offset-4' : 'text-ink-light hover:text-ink'
+                }`}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-col gap-3 border-b border-line pb-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-4">
+            <button
+              type="button"
+              onClick={() => setActiveCategory(null)}
+              aria-pressed={activeCategory === null}
+              className={`text-[11px] transition-colors ${
+                activeCategory === null ? 'text-ink underline underline-offset-4' : 'text-ink-light hover:text-ink'
+              }`}
+            >
+              همه قفسه‌ها
+            </button>
+
+            {categories.map((category) => (
+              <button
+                key={category.id}
+                type="button"
+                onClick={() => setActiveCategory(category.id)}
+                aria-pressed={activeCategory === category.id}
+                className={`text-[11px] transition-colors ${
+                  activeCategory === category.id ? 'text-ink underline underline-offset-4' : 'text-ink-light hover:text-ink'
+                }`}
+              >
+                {category.name}
+              </button>
+            ))}
+          </div>
+
+          <label className="flex w-full items-center gap-2 border-b border-line pb-1 sm:w-64">
+            <Search size={14} className="text-ink-light" aria-hidden="true" />
+            <span className="sr-only">جستجوی محصول</span>
             <input
-              id="product-search"
               type="search"
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="دنبال چه لباسی می‌گردید؟ 🔍"
-              className="field ps-14 text-sm"
-              autoComplete="off"
+              placeholder="جستجو"
+              className="w-full border-0 bg-transparent py-1 text-[12px] text-ink outline-none placeholder:text-ink-light"
             />
-          </div>
-
-          <div className="mt-4 flex justify-center gap-2">
-            {GENDER_FILTERS.map((filter) => (
-              <button
-                key={filter.id}
-                type="button"
-                onClick={() => setActiveGender(filter.id)}
-                aria-pressed={activeGender === filter.id}
-                className={`rounded-2xl px-5 py-2 text-xs font-bold transition-all ${
-                  activeGender === filter.id
-                    ? 'bg-brand-500 text-white shadow-lg shadow-brand-200'
-                    : 'bg-brand-50 text-ink-soft hover:bg-brand-100'
-                }`}
-              >
-                {filter.emoji} {filter.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ویترین محصولات */}
-      <main className="container-shop pb-4 pt-12">
-        <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="border-r-4 border-brand-500 pr-3 text-xl font-black text-ink md:text-2xl">
-            ویترین محصولات
-          </h2>
-          {!productsLoading && !error && (
-            <span className="rounded-full bg-white px-4 py-1.5 text-xs font-bold text-ink-light shadow-sm">
-              {formatNumber(filteredProducts.length)} محصول
-            </span>
-          )}
+          </label>
         </div>
 
-        {productsLoading ? (
-          <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4" aria-busy="true">
-            {Array.from({ length: 8 }).map((_, index) => (
-              <div key={index} className="animate-pulse overflow-hidden rounded-[2rem] border border-brand-50 bg-white">
-                <div className="aspect-square bg-brand-50" />
-                <div className="space-y-3 p-5">
-                  <div className="h-4 rounded bg-brand-50" />
-                  <div className="h-4 w-2/3 rounded bg-brand-50" />
-                  <div className="h-9 rounded-2xl bg-brand-50" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : error ? (
-          <div className="rounded-[2rem] border-2 border-dashed border-red-100 bg-white py-16 text-center">
-            <p className="text-4xl" aria-hidden="true">
-              😴
-            </p>
-            <h3 className="mt-4 text-lg font-black text-ink">ارتباط با سرور برقرار نشد</h3>
-            <p className="mx-auto mt-2 max-w-md text-sm leading-7 text-ink-soft">{error}</p>
-            <button type="button" onClick={refresh} className="btn-primary mt-6 text-sm">
+        {error && (
+          <div className="mt-8 flex flex-col items-center gap-3 border border-line p-10 text-center">
+            <p className="text-sm text-ink-soft">{error}</p>
+            <button type="button" onClick={refresh} className="btn-ghost">
               تلاش دوباره
             </button>
           </div>
-        ) : filteredProducts.length === 0 ? (
-          <div className="rounded-[2rem] border-2 border-dashed border-brand-100 bg-white py-16 text-center">
-            <p className="text-4xl" aria-hidden="true">
-              🥺
-            </p>
-            <h3 className="mt-4 text-lg font-black text-ink">محصولی با این مشخصات پیدا نشد</h3>
-            <p className="mt-2 text-sm text-ink-soft">فیلترها را تغییر دهید یا عبارت دیگری جستجو کنید.</p>
+        )}
+
+        {!error && productsLoading && (
+          <div className="mt-4 grid grid-cols-2 gap-x-3 gap-y-8 md:grid-cols-3 lg:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div key={index} className="animate-pulse">
+                <div className="aspect-product w-full bg-brand-50" />
+                <div className="mt-3 h-3 w-2/3 bg-brand-50" />
+                <div className="mt-2 h-3 w-1/3 bg-brand-50" />
+              </div>
+            ))}
           </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
+        )}
+
+        {!error && !productsLoading && filteredProducts.length === 0 && (
+          <p className="py-16 text-center text-sm text-ink-soft">محصولی با این مشخصات پیدا نشد.</p>
+        )}
+
+        {!error && !productsLoading && filteredProducts.length > 0 && (
+          <div className="mt-4 grid grid-cols-2 gap-x-3 gap-y-9 md:grid-cols-3 lg:grid-cols-4">
             {filteredProducts.map((product) => (
               <ProductCard
                 key={product.id}
@@ -239,7 +239,53 @@ const HomePage: React.FC = () => {
             ))}
           </div>
         )}
-      </main>
+      </section>
+
+      {/* بلوک تحریریه */}
+      <section className="mt-20 grid md:grid-cols-2">
+        <img
+          src="/images/editorial.jpg"
+          alt="پارچه‌های نرم پنبه‌ای برای پوست کودک"
+          loading="lazy"
+          className="h-[420px] w-full object-cover md:h-[520px]"
+          width={1200}
+          height={1040}
+        />
+
+        <div className="flex flex-col justify-center bg-brand-50 px-8 py-14 md:px-14">
+          <p className="text-[10px] uppercase tracking-editorial text-ink-soft">کیفیت پارچه</p>
+          <h2 className="mt-4 text-2xl font-light leading-relaxed text-ink md:text-3xl">
+            نرمی‌ای که پوست کودک حس می‌کند
+          </h2>
+          <p className="mt-4 max-w-md text-[13px] font-light leading-7 text-ink-soft">
+            پارچه‌های پنبه‌ای ضدحساسیت، دوخت تمیز و سایزبندی دقیق؛ هر قطعه پیش از ارسال بررسی می‌شود تا
+            کوچک‌ترین عضو خانواده راحت‌ترین روزهایش را بگذراند.
+          </p>
+          <Link
+            to="/?gender=1"
+            className="mt-8 inline-block w-fit border-b border-ink pb-1 text-[11px] uppercase tracking-label text-ink transition-opacity hover:opacity-60"
+          >
+            مشاهده کالکشن
+          </Link>
+        </div>
+      </section>
+
+      {/* نوار مزیت‌ها */}
+      <section className="border-y border-line">
+        <div className="container-shop grid grid-cols-2 gap-6 py-8 text-center md:grid-cols-4">
+          {[
+            { title: 'ارسال سریع', text: 'پست پیشتاز به سراسر کشور' },
+            { title: 'پرداخت امن', text: 'از طریق درگاه‌های بانکی' },
+            { title: '۷ روز بازگشت', text: 'در صورت عدم رضایت' },
+            { title: 'تضمین کیفیت', text: 'پارچه‌های مناسب پوست کودک' },
+          ].map((item) => (
+            <div key={item.title}>
+              <p className="text-[11px] uppercase tracking-label text-ink">{item.title}</p>
+              <p className="mt-1.5 text-[11px] font-light text-ink-light">{item.text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
       <StoreFooter />
     </div>

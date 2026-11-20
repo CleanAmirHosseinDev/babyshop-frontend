@@ -63,13 +63,13 @@ const VerifyPhonePage: React.FC = () => {
       }
     >
       {state.notice && (
-        <div className="mb-4 rounded-2xl border border-amber-100 bg-amber-50 p-3 text-center text-[11px] font-bold leading-6 text-amber-700">
+        <div className="mb-4 rounded-none border border-amber-100 bg-amber-50 p-3 text-center text-[11px] font-bold leading-6 text-amber-700">
           {state.notice}
         </div>
       )}
 
       {state.code && (
-        <div className="mb-4 rounded-2xl border border-lavender-100 bg-lavender-50 p-3 text-center text-[11px] font-bold text-lavender-500">
+        <div className="mb-4 rounded-none border border-lavender-100 bg-lavender-50 p-3 text-center text-[11px] font-bold text-lavender-500">
           کد تایید (محیط توسعه): <span className="font-mono tracking-[0.3em]">{state.code}</span>
         </div>
       )}
@@ -77,7 +77,7 @@ const VerifyPhonePage: React.FC = () => {
       {message && (
         <div
           role="alert"
-          className="mb-4 rounded-2xl border border-red-100 bg-red-50 p-3 text-center text-xs font-bold text-red-600"
+          className="mb-4 rounded-none border border-red-100 bg-red-50 p-3 text-center text-xs font-bold text-red-600"
         >
           {message}
         </div>

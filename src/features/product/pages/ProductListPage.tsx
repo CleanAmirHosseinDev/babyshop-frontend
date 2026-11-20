@@ -38,7 +38,7 @@ const ProductListPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#FFFAFB] text-right">
       <div className="container-shop py-8">
-        <header className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-[2rem] border border-brand-50 bg-white p-6 shadow-card">
+        <header className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-none border border-brand-50 bg-white p-6 shadow-none">
           <h1 className="flex items-center gap-2 text-lg font-black text-ink">
             <ShoppingBag className="text-lavender-500" size={22} aria-hidden="true" /> لیست محصولات
           </h1>
@@ -49,7 +49,7 @@ const ProductListPage: React.FC = () => {
             </Link>
             <Link
               to="/dashboard"
-              className="rounded-xl px-3 py-2 text-xs font-bold text-ink-soft transition-colors hover:bg-brand-50"
+              className="rounded-none px-3 py-2 text-xs font-bold text-ink-soft transition-colors hover:bg-brand-50"
             >
               ← حساب کاربری
             </Link>
@@ -75,7 +75,7 @@ const ProductListPage: React.FC = () => {
           />
         </div>
 
-        <div className="overflow-hidden rounded-[2rem] border border-brand-50 bg-white shadow-card">
+        <div className="overflow-hidden rounded-none border border-brand-50 bg-white shadow-none">
           <div className="overflow-x-auto">
             <table className="w-full text-right">
               <thead>
@@ -127,7 +127,7 @@ const ProductListPage: React.FC = () => {
                         height={56}
                         loading="lazy"
                         decoding="async"
-                        className="mx-auto h-14 w-14 rounded-xl border border-brand-50 object-cover"
+                        className="mx-auto h-14 w-14 rounded-none border border-brand-50 object-cover"
                         onError={(event) => {
                           const image = event.currentTarget;
                           if (image.dataset.fallbackApplied === 'true') return;
@@ -167,7 +167,7 @@ const ProductListPage: React.FC = () => {
                           type="button"
                           onClick={() => navigate(`/products/edit/${product.id}`)}
                           aria-label={`ویرایش ${product.name}`}
-                          className="grid h-8 w-8 place-items-center rounded-lg bg-lavender-50 text-lavender-500 transition-colors hover:bg-lavender-500 hover:text-white"
+                          className="grid h-8 w-8 place-items-center rounded-none bg-lavender-50 text-lavender-500 transition-colors hover:bg-lavender-500 hover:text-white"
                         >
                           <Pencil size={15} aria-hidden="true" />
                         </button>
@@ -176,7 +176,7 @@ const ProductListPage: React.FC = () => {
                             type="button"
                             onClick={() => handleDelete(product.id, product.name)}
                             aria-label={`حذف ${product.name}`}
-                            className="grid h-8 w-8 place-items-center rounded-lg bg-red-50 text-red-500 transition-colors hover:bg-red-500 hover:text-white"
+                            className="grid h-8 w-8 place-items-center rounded-none bg-red-50 text-red-500 transition-colors hover:bg-red-500 hover:text-white"
                           >
                             <Trash2 size={15} aria-hidden="true" />
                           </button>
