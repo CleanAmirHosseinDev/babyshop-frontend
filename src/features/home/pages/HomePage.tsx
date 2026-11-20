@@ -272,10 +272,10 @@ const HomePage: React.FC = () => {
             کوچک‌ترین عضو خانواده راحت‌ترین روزهایش را بگذراند.
           </p>
           <Link
-            to="/?gender=1"
+            to="/looks"
             className="mt-8 inline-block w-fit border-b border-ink pb-1 text-[11px] uppercase tracking-label text-ink transition-opacity hover:opacity-60"
           >
-            مشاهده کالکشن
+            مشاهده استایل‌ها
           </Link>
         </div>
       </section>

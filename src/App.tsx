@@ -6,6 +6,7 @@ import { PageLoader, RequireAdmin, RequireAuth, RequireManager, ScrollToTop } fr
 
 // صفحات به‌صورت تنبل (lazy) بارگذاری می‌شوند تا حجم باندل اولیه کم بماند
 const HomePage = lazy(() => import('./features/home/pages/HomePage'));
+const LooksPage = lazy(() => import('./features/looks/pages/LooksPage'));
 const ProductDetailsPage = lazy(() => import('./features/product/pages/ProductDetailsPage'));
 const CartPage = lazy(() => import('./features/cart/pages/CartPage'));
 const CheckoutPage = lazy(() => import('./features/order/cart/pages/CheckoutPage'));
@@ -40,6 +41,7 @@ function App() {
         <Routes>
           {/* ویترین فروشگاه: برای همه (مهمان هم می‌تواند خرید را ببیند) */}
           <Route path="/" element={<HomePage />} />
+          <Route path="/looks" element={<LooksPage />} />
           <Route path="/product/:id" element={<ProductDetailsPage />} />
           <Route path="/cart" element={<CartPage />} />
 

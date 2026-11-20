@@ -18,6 +18,7 @@ const NAV_LINKS = [
   { label: 'پسرانه', to: '/?gender=1' },
   { label: 'دخترانه', to: '/?gender=2' },
   { label: 'نوزاد', to: '/?gender=3' },
+  { label: 'استایل‌ها', to: '/looks' },
 ];
 
 /**
