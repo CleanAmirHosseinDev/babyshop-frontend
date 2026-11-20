@@ -22,6 +22,14 @@ const TILES = [
   { src: '/images/tile-boy.jpg', title: 'پسرانه', caption: 'کالکشن پاییز', gender: 1 },
 ];
 
+/** تصویر کوچک هر قفسه بر اساس نام دسته (فایل‌های SVG موجود در public/images/categories) */
+const categoryArt = (name: string) => {
+  if (name.includes('پسر')) return '/images/categories/boys.svg';
+  if (name.includes('دختر')) return '/images/categories/girls.svg';
+  if (name.includes('نوزاد') || name.includes('سیسمونی')) return '/images/categories/baby.svg';
+  return '/images/categories/all.svg';
+};
+
 const HomePage: React.FC = () => {
   const [searchParams] = useSearchParams();
 
@@ -166,10 +174,11 @@ const HomePage: React.FC = () => {
               type="button"
               onClick={() => setActiveCategory(null)}
               aria-pressed={activeCategory === null}
-              className={`text-[11px] transition-colors ${
+              className={`flex items-center gap-2 text-[11px] transition-colors ${
                 activeCategory === null ? 'text-ink underline underline-offset-4' : 'text-ink-light hover:text-ink'
               }`}
             >
+              <img src="/images/categories/all.svg" alt="" aria-hidden="true" className="h-6 w-6 object-contain" />
               همه قفسه‌ها
             </button>
 
@@ -179,10 +188,11 @@ const HomePage: React.FC = () => {
                 type="button"
                 onClick={() => setActiveCategory(category.id)}
                 aria-pressed={activeCategory === category.id}
-                className={`text-[11px] transition-colors ${
+                className={`flex items-center gap-2 text-[11px] transition-colors ${
                   activeCategory === category.id ? 'text-ink underline underline-offset-4' : 'text-ink-light hover:text-ink'
                 }`}
               >
+                <img src={categoryArt(category.name)} alt="" aria-hidden="true" className="h-6 w-6 object-contain" />
                 {category.name}
               </button>
             ))}

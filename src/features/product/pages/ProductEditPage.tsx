@@ -140,7 +140,7 @@ const ProductEditPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="grid min-h-screen place-items-center bg-[#FFFAFB]">
+      <div className="grid min-h-screen place-items-center bg-white">
         <span className="h-10 w-10 animate-spin rounded-full border-4 border-brand-100 border-t-brand-500" />
       </div>
     );
@@ -148,7 +148,7 @@ const ProductEditPage: React.FC = () => {
 
   if (notFound) {
     return (
-      <div className="grid min-h-screen place-items-center bg-[#FFFAFB] p-4 text-center">
+      <div className="grid min-h-screen place-items-center bg-white p-4 text-center">
         <div>
           <p className="text-4xl" aria-hidden="true">
             🎈
@@ -163,7 +163,7 @@ const ProductEditPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#FFFAFB] text-right">
+    <div className="min-h-screen bg-white text-right">
       <div className="container-shop py-8">
         <form
           onSubmit={handleSubmit}

@@ -53,7 +53,7 @@ const TicketCreatePage: React.FC = () => {
   const feedback = formError ?? error;
 
   return (
-    <div className="min-h-screen bg-[#FFFAFB] text-right">
+    <div className="min-h-screen bg-white text-right">
       <StoreHeader backTo="/dashboard" backLabel="حساب کاربری" />
 
       <main className="container-shop py-8">

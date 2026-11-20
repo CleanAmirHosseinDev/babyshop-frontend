@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-label="همه">
+  <rect width="400" height="300" fill="#F6F4EF"/>
+  <circle cx="200" cy="160" r="115" fill="#ECE8DF"/>
+  <circle cx="250" cy="170" r="62" fill="#F6D7B8"/>
+  <path d="M188 170 A62 62 0 0 1 312 170 Z" fill="#3B2F2A"/>
+  <circle cx="228" cy="184" r="6" fill="#2E2A27"/>
+  <circle cx="272" cy="184" r="6" fill="#2E2A27"/>
+  <path d="M240 204 Q252 215 264 204" stroke="#2E2A27" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+  <circle cx="212" cy="196" r="8" fill="#F0B9A0" opacity="0.55"/>
+  <circle cx="288" cy="196" r="8" fill="#F0B9A0" opacity="0.55"/>
+  <circle cx="118" cy="112" r="20" fill="#4A342C"/>
+  <circle cx="182" cy="112" r="20" fill="#4A342C"/>
+  <circle cx="150" cy="176" r="58" fill="#F6D7B8"/>
+  <path d="M92 176 A58 58 0 0 1 208 176 Z" fill="#4A342C"/>
+  <circle cx="128" cy="190" r="6" fill="#2E2A27"/>
+  <circle cx="172" cy="190" r="6" fill="#2E2A27"/>
+  <path d="M138 210 Q150 220 162 210" stroke="#2E2A27" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+  <circle cx="110" cy="202" r="8" fill="#F0B9A0" opacity="0.55"/>
+  <circle cx="190" cy="202" r="8" fill="#F0B9A0" opacity="0.55"/>
+</svg>

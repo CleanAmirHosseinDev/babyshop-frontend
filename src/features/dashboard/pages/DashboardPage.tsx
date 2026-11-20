@@ -108,7 +108,7 @@ const DashboardPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FFFAFB] text-right">
+    <div className="min-h-screen bg-white text-right">
       <StoreHeader backTo="/" backLabel="فروشگاه" />
 
       <main className="container-shop py-8">

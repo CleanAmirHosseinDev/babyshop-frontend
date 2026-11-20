@@ -70,7 +70,7 @@ const OrderDetailsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FFFAFB]">
+      <div className="min-h-screen bg-white">
         <StoreHeader backTo="/dashboard" backLabel="حساب کاربری" />
         <div className="container-shop flex min-h-[50vh] items-center justify-center">
           <span className="h-10 w-10 animate-spin rounded-full border-4 border-brand-100 border-t-brand-500" />
@@ -81,7 +81,7 @@ const OrderDetailsPage: React.FC = () => {
 
   if (!order) {
     return (
-      <div className="min-h-screen bg-[#FFFAFB]">
+      <div className="min-h-screen bg-white">
         <StoreHeader backTo="/dashboard" backLabel="حساب کاربری" />
         <div className="container-shop flex min-h-[50vh] flex-col items-center justify-center text-center">
           <p className="text-4xl" aria-hidden="true">
@@ -103,7 +103,7 @@ const OrderDetailsPage: React.FC = () => {
   const items = order.items ?? [];
 
   return (
-    <div className="min-h-screen bg-[#FFFAFB] text-right">
+    <div className="min-h-screen bg-white text-right">
       <StoreHeader backTo="/dashboard" backLabel="حساب کاربری" />
 
       <main className="container-shop py-8">

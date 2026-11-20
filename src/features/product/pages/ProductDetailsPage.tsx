@@ -126,7 +126,7 @@ const ProductDetailsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FFFAFB]">
+      <div className="min-h-screen bg-white">
         <StoreHeader backTo="/" backLabel="فروشگاه" />
         <div className="container-shop grid animate-pulse gap-8 py-12 md:grid-cols-2">
           <div className="aspect-square rounded-[2.5rem] bg-white" />
@@ -143,7 +143,7 @@ const ProductDetailsPage: React.FC = () => {
 
   if (error || !product) {
     return (
-      <div className="min-h-screen bg-[#FFFAFB]">
+      <div className="min-h-screen bg-white">
         <StoreHeader backTo="/" backLabel="فروشگاه" />
         <div className="container-shop flex min-h-[50vh] flex-col items-center justify-center text-center">
           <p className="text-4xl" aria-hidden="true">
@@ -164,7 +164,7 @@ const ProductDetailsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#FFFAFB] text-right">
+    <div className="min-h-screen bg-white text-right">
       <StoreHeader backTo="/" backLabel="فروشگاه" />
 
       <main className="container-shop py-8">

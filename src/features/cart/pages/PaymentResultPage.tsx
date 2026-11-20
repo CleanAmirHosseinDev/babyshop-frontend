@@ -41,7 +41,7 @@ const PaymentResultPage: React.FC = () => {
     : (verification?.message ?? null);
 
   return (
-    <div className="min-h-screen bg-[#FFFAFB] text-right">
+    <div className="min-h-screen bg-white text-right">
       <StoreHeader />
 
       <main className="container-shop grid min-h-[55vh] place-items-center py-12">
