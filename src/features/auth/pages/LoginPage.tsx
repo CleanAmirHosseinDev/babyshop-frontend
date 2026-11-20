@@ -52,6 +52,7 @@ const LoginPage: React.FC = () => {
         replace: true,
         state: {
           phoneNumber,
+          code: result.verificationCode ?? undefined,
           notice: 'شماره موبایل شما هنوز تایید نشده است؛ کد تایید جدید برای شما ارسال شد.',
         },
       });
@@ -75,7 +76,7 @@ const LoginPage: React.FC = () => {
       }
     >
       {message && (
-        <div role="alert" className="mb-4 rounded-2xl border border-red-100 bg-red-50 p-3 text-center text-xs font-bold text-red-600">
+        <div role="alert" className="mb-4 rounded-none border border-red-100 bg-red-50 p-3 text-center text-xs font-bold text-red-600">
           {message}
         </div>
       )}

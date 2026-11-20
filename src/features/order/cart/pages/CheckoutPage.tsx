@@ -66,6 +66,8 @@ const CheckoutPage: React.FC = () => {
         ProductId: item.id,
         Quantity: item.quantity,
         UnitPrice: item.price,
+        // سایز/رده‌ی سنی برای کسر از ردیف درست انبار (در صورت انتخاب سایز)
+        AgeRange: item.sizeCode && item.sizeCode !== 'default' ? item.sizeCode : undefined,
       })),
     });
 
@@ -102,7 +104,7 @@ const CheckoutPage: React.FC = () => {
         <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
             {/* اطلاعات گیرنده */}
-            <section className="rounded-[2rem] border border-brand-50 bg-white p-6 shadow-card">
+            <section className="rounded-none border border-brand-50 bg-white p-6 shadow-none">
               <h2 className="mb-5 flex items-center gap-2 text-sm font-black text-ink">
                 <MapPin size={18} className="text-brand-500" aria-hidden="true" />
                 اطلاعات گیرنده
@@ -199,7 +201,7 @@ const CheckoutPage: React.FC = () => {
             </section>
 
             {/* روش ارسال */}
-            <section className="rounded-[2rem] border border-brand-50 bg-white p-6 shadow-card">
+            <section className="rounded-none border border-brand-50 bg-white p-6 shadow-none">
               <h2 className="mb-5 flex items-center gap-2 text-sm font-black text-ink">
                 <Truck size={18} className="text-brand-500" aria-hidden="true" />
                 روش ارسال
@@ -249,7 +251,7 @@ const CheckoutPage: React.FC = () => {
           </div>
 
           {/* فاکتور */}
-          <aside className="h-fit rounded-[2rem] border border-brand-100 bg-white p-6 shadow-card lg:sticky lg:top-24">
+          <aside className="h-fit rounded-none border border-brand-100 bg-white p-6 shadow-none lg:sticky lg:top-24">
             <h2 className="text-sm font-black text-ink">خلاصه فاکتور</h2>
 
             <dl className="mt-5 space-y-3 border-b border-brand-50 pb-5 text-xs">

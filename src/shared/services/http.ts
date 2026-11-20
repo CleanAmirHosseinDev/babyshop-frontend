@@ -6,11 +6,14 @@ export const AUTH_EXPIRED_EVENT = 'ziizii:auth-expired';
 
 export class ApiError extends Error {
   status: number;
+  /** داده‌ی تکمیلی خطا (مثلاً پرچم «نیاز به تایید موبایل» و کد تایید در محیط توسعه) */
+  details: Record<string, unknown> | null;
 
-  constructor(message: string, status = 0) {
+  constructor(message: string, status = 0, details: Record<string, unknown> | null = null) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
+    this.details = details;
   }
 }
 
@@ -152,7 +155,8 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
 
     if (!response.ok || !apiSucceeded) {
       const message = extractErrorMessage(payload) ?? statusMessage(response.status);
-      throw new ApiError(message, response.status);
+      const details = isRecord(payload) && isRecord(payload.data) ? payload.data : null;
+      throw new ApiError(message, response.status, details);
     }
 
     // اکثر endpointها { success, data } برمی‌گردانند؛ بقیه خود پاسخ را می‌دهند

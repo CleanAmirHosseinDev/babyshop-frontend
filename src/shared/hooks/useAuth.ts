@@ -1,5 +1,6 @@
 import { useCallback, useState, useSyncExternalStore } from 'react';
 import { authService, type RegisterPayload, type ResetPasswordPayload } from '../services/authService';
+import { ApiError } from '../services/http';
 import {
   endSession,
   getAuthSnapshot,
@@ -31,7 +32,9 @@ export const useAuth = () => {
   const [error, setError] = useState<string | null>(null);
 
   const run = useCallback(
-    async <T,>(task: () => Promise<T>): Promise<{ ok: true; data: T } | { ok: false; message: string }> => {
+    async <T,>(
+      task: () => Promise<T>,
+    ): Promise<{ ok: true; data: T } | { ok: false; message: string; reason: unknown }> => {
       setLoading(true);
       setError(null);
       try {
@@ -39,7 +42,7 @@ export const useAuth = () => {
       } catch (err) {
         const message = toMessage(err);
         setError(message);
-        return { ok: false, message };
+        return { ok: false, message, reason: err };
       } finally {
         setLoading(false);
       }
@@ -52,10 +55,18 @@ export const useAuth = () => {
       const result = await run(() => authService.login(payload));
 
       if (!result.ok) {
+        // بک‌اند در صورت تایید‌نشدن شماره، پرچم و (در Development) کد تایید را در data برمی‌گرداند
+        const details = result.reason instanceof ApiError ? result.reason.details : null;
+        const verificationCode =
+          typeof details?.verificationCode === 'string' ? details.verificationCode : null;
+
         return {
           success: false,
           message: result.message,
-          requiresVerification: UNVERIFIED_PATTERN.test(result.message),
+          verificationCode,
+          // برای نسخه‌های قدیمی بک‌اند که فقط پیام فارسی را برمی‌گردانند
+          requiresVerification:
+            details?.requiresPhoneVerification === true || UNVERIFIED_PATTERN.test(result.message),
         };
       }
 
